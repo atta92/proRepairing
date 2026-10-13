@@ -1,10 +1,20 @@
-<footer class="bg-ink text-white">
-    <div class="site-container grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-4">
+@php
+    $siteName = ($siteSettings ?? null)?->displayName() ?: config('app.name');
+    $siteDescription = ($siteSettings ?? null)?->site_description
+        ?: 'Top-rated same-day repair services for phones, tablets and laptops — walk in or mail in from anywhere in the UK.';
+@endphp
+
+<footer class="site-grid-bg bg-ink text-white">
+    <div class="site-container relative z-[1] grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-4">
         <div class="md:col-span-2 lg:col-span-1">
-            <p class="font-display text-2xl font-bold tracking-tight">{{ config('app.name') }}</p>
+            @include('partials.site-brand', [
+                'textClass' => 'font-display text-2xl font-bold tracking-tight text-white',
+                'logoClass' => 'h-10 w-auto max-w-[12rem] object-contain',
+            ])
             <p class="mt-3 max-w-sm text-sm leading-relaxed text-white/70">
-                Top-rated same-day repair services for phones, tablets and laptops — walk in or mail in from anywhere in the UK.
+                {{ $siteDescription }}
             </p>
+            @include('partials.social-links')
         </div>
 
         <div>
@@ -63,9 +73,9 @@
         </div>
     </div>
 
-    <div class="border-t border-white/10">
+    <div class="relative z-[1] border-t border-white/10">
         <div class="site-container flex flex-col gap-2 py-5 text-xs text-white/50 sm:flex-row sm:items-center sm:justify-between">
-            <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} {{ $siteName }}. All rights reserved.</p>
             <p class="flex flex-wrap gap-3">
                 <a href="{{ route('pages.privacy') }}" class="transition hover:text-white">Privacy</a>
                 <span aria-hidden="true">·</span>

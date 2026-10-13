@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $post->title . ' — ' . config('app.name'))
+@section('title', $post->title . ' — ' . $siteSettings->displayName())
 
 @section('meta_description', $post->excerpt ?: Str::limit(strip_tags($post->body), 155))
 
@@ -12,7 +12,7 @@
 
 @section('content')
     <article>
-        <header class="bg-ink py-14 text-white sm:py-16">
+        <header class="site-grid-bg bg-ink py-14 text-white sm:py-16">
             <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
                 <a href="{{ route('blog.index') }}" class="text-sm font-semibold text-accent-light transition hover:text-white">
                     ← Back to blog

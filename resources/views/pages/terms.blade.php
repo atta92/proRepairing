@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', ($settings->terms_title ?: 'Terms & conditions') . ' — ' . config('app.name'))
+@section('title', ($settings->terms_title ?: 'Terms & conditions') . ' — ' . $siteSettings->displayName())
 
 @section('meta_description', Str::limit(strip_tags($settings->terms_body ?? ''), 155))
 
 @section('content')
-    <section class="bg-ink py-14 text-white sm:py-16">
+    <section class="site-grid-bg bg-ink py-14 text-white sm:py-16">
         <div class="site-container">
             <p class="text-sm font-semibold uppercase tracking-wider text-accent-light">Legal</p>
             <h1 class="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">

@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Checkout — ' . config('app.name'))
+@section('title', 'Checkout — ' . $siteSettings->displayName())
 
-@section('meta_description', 'Complete your repair booking checkout at ' . config('app.name') . '.')
+@section('meta_description', 'Complete your repair booking checkout at ' . $siteSettings->displayName() . '.')
 
 @section('meta_robots', 'noindex, nofollow')
 
 @section('content')
-    <section class="bg-ink py-10 text-white">
+    <section class="site-grid-bg bg-ink py-10 text-white">
         <div class="site-container">
             <h1 class="font-display text-3xl font-bold tracking-tight sm:text-4xl">Checkout</h1>
             <p class="mt-2 text-white/70">Confirm your repair, details and payment.</p>
@@ -35,15 +35,15 @@
                         <div class="mt-4 grid gap-4 sm:grid-cols-2">
                             <label class="block sm:col-span-2">
                                 <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Full name</span>
-                                <input type="text" name="name" value="{{ old('name') }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                <input type="text" name="name" value="{{ old('name', $user?->name) }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                             </label>
                             <label class="block">
                                 <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Email</span>
-                                <input type="email" name="email" value="{{ old('email') }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                <input type="email" name="email" value="{{ old('email', $user?->email) }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                             </label>
                             <label class="block">
                                 <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Phone</span>
-                                <input type="tel" name="phone" value="{{ old('phone') }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                <input type="tel" name="phone" value="{{ old('phone', $user?->phone ?: $customer?->phone) }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                             </label>
                         </div>
                     </div>
@@ -82,7 +82,7 @@
                         <div id="mail-fields" class="mt-4 grid gap-4 sm:grid-cols-2 {{ old('fulfilment') === 'mail_in' ? '' : 'hidden' }}">
                             <label class="block sm:col-span-2">
                                 <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Address line 1</span>
-                                <input type="text" name="address_line_1" value="{{ old('address_line_1') }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                <input type="text" name="address_line_1" value="{{ old('address_line_1', $customer?->address_line_1) }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                             </label>
                             <label class="block sm:col-span-2">
                                 <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Address line 2</span>
@@ -90,11 +90,11 @@
                             </label>
                             <label class="block">
                                 <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">City</span>
-                                <input type="text" name="city" value="{{ old('city') }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                <input type="text" name="city" value="{{ old('city', $customer?->city) }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                             </label>
                             <label class="block">
                                 <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Postcode</span>
-                                <input type="text" name="postcode" value="{{ old('postcode') }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                <input type="text" name="postcode" value="{{ old('postcode', $customer?->postcode) }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                             </label>
                         </div>
 
@@ -107,13 +107,26 @@
                     <div class="rounded-2xl border border-mist bg-white p-5 sm:p-6">
                         <h2 class="font-display text-xl font-semibold text-ink">Payment</h2>
                         <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                            <label class="cursor-pointer rounded-xl border-2 border-mist p-4 has-[:checked]:border-accent has-[:checked]:bg-accent/5">
-                                <input type="radio" name="payment_method" value="card" class="sr-only" {{ old('payment_method', 'card') === 'card' ? 'checked' : '' }}>
-                                <p class="font-semibold text-ink">Pay online now</p>
-                                <p class="mt-1 text-sm text-steel">Secure card payment (demo — marks booking as paid).</p>
+                            <label class="cursor-pointer rounded-xl border-2 border-mist p-4 has-[:checked]:border-accent has-[:checked]:bg-accent/5 {{ empty($stripeConfigured) ? 'opacity-50' : '' }}">
+                                <input
+                                    type="radio"
+                                    name="payment_method"
+                                    value="card"
+                                    class="sr-only"
+                                    {{ old('payment_method', ! empty($stripeConfigured) ? 'card' : 'store') === 'card' ? 'checked' : '' }}
+                                    {{ empty($stripeConfigured) ? 'disabled' : '' }}
+                                >
+                                <p class="font-semibold text-ink">Pay online with Stripe</p>
+                                <p class="mt-1 text-sm text-steel">
+                                    @if (! empty($stripeConfigured))
+                                        You’ll be redirected to Stripe’s secure checkout, then returned here.
+                                    @else
+                                        Online payments are not configured yet.
+                                    @endif
+                                </p>
                             </label>
                             <label class="cursor-pointer rounded-xl border-2 border-mist p-4 has-[:checked]:border-accent has-[:checked]:bg-accent/5">
-                                <input type="radio" name="payment_method" value="store" class="sr-only" {{ old('payment_method') === 'store' ? 'checked' : '' }}>
+                                <input type="radio" name="payment_method" value="store" class="sr-only" {{ old('payment_method', ! empty($stripeConfigured) ? 'card' : 'store') === 'store' ? 'checked' : '' }}>
                                 <p class="font-semibold text-ink">Pay at store / on completion</p>
                                 <p class="mt-1 text-sm text-steel">Pay by card or cash when the repair is done.</p>
                             </label>

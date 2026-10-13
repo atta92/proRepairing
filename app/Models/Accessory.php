@@ -9,6 +9,7 @@ class Accessory extends Model
 {
     protected $fillable = [
         'name',
+        'page_title',
         'slug',
         'type',
         'category',

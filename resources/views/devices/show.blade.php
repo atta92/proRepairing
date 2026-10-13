@@ -1,11 +1,15 @@
 @extends('layouts.app')
 
-@section('title', $device->name . ' Repair — ' . config('app.name'))
+@section('title', $device->name . ' Repair — ' . $siteSettings->displayName())
 
-@section('meta_description', $device->excerpt ?: 'Repair prices and options for ' . $device->name)
+@php
+    $devicePageDescription = $device->description ?: $device->content ?: $device->excerpt;
+@endphp
+
+@section('meta_description', Str::limit(strip_tags((string) ($devicePageDescription ?: 'Repair prices and options for ' . $device->name)), 155))
 
 @section('content')
-    <section class="bg-ink py-12 text-white sm:py-16">
+    <section class="site-grid-bg bg-ink py-12 text-white sm:py-16">
         <div class="site-container">
             <p class="text-sm text-white/60">
                 <a href="{{ route('home') }}" class="hover:text-white">Home</a>
@@ -17,9 +21,6 @@
             <h1 class="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
                 {{ $device->name }} Repair
             </h1>
-            @if ($device->excerpt)
-                <p class="mt-3 max-w-2xl text-lg text-white/75">{{ $device->excerpt }}</p>
-            @endif
             <p class="mt-4 text-sm text-accent-light">
                 What needs fixing? Select one or more repairs — add more and save 20%.
             </p>
@@ -28,6 +29,20 @@
 
     <section class="bg-snow py-12 sm:py-16">
         <div class="site-container">
+            @if (filled($device->page_title) || filled($devicePageDescription))
+                <div class="mx-auto mb-10 max-w-3xl text-center">
+                    @if (filled($device->page_title))
+                        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                            {{ $device->page_title }}
+                        </h2>
+                        <span class="mt-3 inline-block h-1 w-16 rounded-full bg-accent" aria-hidden="true"></span>
+                    @endif
+                    @if (filled($devicePageDescription))
+                        <p class="{{ filled($device->page_title) ? 'mt-5' : '' }} text-base leading-relaxed text-steel sm:text-lg whitespace-pre-line">{{ $devicePageDescription }}</p>
+                    @endif
+                </div>
+            @endif
+
             @if ($errors->any())
                 <div class="mb-6 rounded-xl border border-signal/30 bg-signal/10 px-4 py-3 text-sm text-signal-dark">
                     {{ $errors->first() }}
@@ -50,6 +65,9 @@
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <p class="font-display text-lg font-semibold text-ink">{{ $sku->repair->name }}</p>
+                                    @if (filled($sku->repair->description))
+                                        <p class="mt-1.5 text-sm leading-relaxed text-steel">{{ $sku->repair->description }}</p>
+                                    @endif
                                     <p class="mt-2 font-display text-2xl font-bold text-accent">
                                         £{{ number_format((float) $sku->price, 0) }}
                                     </p>
@@ -90,8 +108,8 @@
                 @endif
             </form>
 
-            @if ($device->content)
-                <div class="mt-10 max-w-3xl text-steel">
+            @if (filled($device->content) && filled($device->description) && $device->content !== $device->description)
+                <div class="mt-10 max-w-3xl text-steel whitespace-pre-line">
                     <p>{{ $device->content }}</p>
                 </div>
             @endif
@@ -126,7 +144,9 @@ document.addEventListener('DOMContentLoaded', () => {
         countEl.textContent = String(selected.length);
         totalEl.textContent = '£' + total.toFixed(total % 1 ? 2 : 0);
         discountNote.classList.toggle('hidden', selected.length < 2);
-        bookBtn.disabled = selected.length === 0;
+        if (bookBtn) {
+            bookBtn.disabled = selected.length === 0;
+        }
     };
 
     boxes.forEach((box) => box.addEventListener('change', update));

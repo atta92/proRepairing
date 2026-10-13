@@ -11,7 +11,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'customer' => \App\Http\Middleware\EnsureCustomerAccount::class,
+        ]);
+
+        $middleware->redirectGuestsTo(fn () => route('login'));
+        $middleware->redirectUsersTo(function () {
+            $user = auth()->user();
+
+            return $user?->is_admin ? '/admin' : route('account.dashboard');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $product->name . ' — Shop — ' . config('app.name'))
+@section('title', $product->name . ' — Shop — ' . $siteSettings->displayName())
 
 @section('meta_description', $product->excerpt ?: Str::limit(strip_tags((string) $product->description), 155))
 
@@ -9,13 +9,52 @@
 @endif
 
 @section('content')
-    <section class="bg-snow py-10 sm:py-14">
+    <section class="site-grid-bg bg-ink py-12 text-white sm:py-14">
         <div class="site-container">
-            <a href="{{ route('shop.index', ['type' => $product->type]) }}" class="text-sm font-semibold text-accent hover:text-accent-dark">
-                ← Back to {{ strtolower($product->type_label) }}
-            </a>
+            <p class="text-sm text-white/60">
+                <a href="{{ route('shop.index') }}" class="hover:text-white">Shop</a>
+                <span class="mx-2">/</span>
+                <a href="{{ route('shop.index', ['type' => $product->type]) }}" class="hover:text-white">{{ $product->type_label }}</a>
+                <span class="mx-2">/</span>
+                <span class="text-white">{{ $product->name }}</span>
+            </p>
+            <p class="mt-4 text-sm font-semibold uppercase tracking-wider text-accent-light">
+                {{ $product->type_label }} · {{ $product->category_label }}
+            </p>
+            <h1 class="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                {{ $product->name }}
+            </h1>
+        </div>
+    </section>
 
-            <div class="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-12 lg:items-start">
+    <section
+        class="bg-snow py-10 sm:py-14"
+        x-data="{ ready: false }"
+        x-init="setTimeout(() => ready = true, 220)"
+    >
+        <div class="site-container">
+            <div x-show="!ready">
+                @include('partials.skeletons.shop-show')
+            </div>
+
+            <div x-show="ready" x-cloak>
+            @if (filled($product->page_title) || filled($product->description) || filled($product->excerpt))
+                <div class="mx-auto mb-10 max-w-3xl text-center">
+                    @if (filled($product->page_title))
+                        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                            {{ $product->page_title }}
+                        </h2>
+                        <span class="mt-3 inline-block h-1 w-16 rounded-full bg-accent" aria-hidden="true"></span>
+                    @endif
+                    @if (filled($product->description))
+                        <p class="{{ filled($product->page_title) ? 'mt-5' : '' }} text-base leading-relaxed text-steel sm:text-lg whitespace-pre-line">{{ $product->description }}</p>
+                    @elseif (filled($product->excerpt))
+                        <p class="{{ filled($product->page_title) ? 'mt-5' : '' }} text-base leading-relaxed text-steel sm:text-lg">{{ $product->excerpt }}</p>
+                    @endif
+                </div>
+            @endif
+
+            <div class="grid gap-8 lg:grid-cols-2 lg:gap-12 lg:items-start">
                 <div class="overflow-hidden rounded-2xl border border-mist bg-white">
                     @if ($product->image_path)
                         <img
@@ -31,14 +70,7 @@
                 </div>
 
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-accent">
-                        {{ $product->type_label }} · {{ $product->category_label }}
-                    </p>
-                    <h1 class="mt-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-                        {{ $product->name }}
-                    </h1>
-
-                    <div class="mt-4 flex flex-wrap items-baseline gap-3">
+                    <div class="flex flex-wrap items-baseline gap-3">
                         <span class="font-display text-3xl font-bold text-ink">{{ $product->formatted_price }}</span>
                         @if ($product->compare_at_price && $product->compare_at_price > $product->price)
                             <span class="text-lg text-steel/70 line-through">
@@ -46,16 +78,6 @@
                             </span>
                         @endif
                     </div>
-
-                    @if ($product->excerpt)
-                        <p class="mt-4 text-base leading-relaxed text-steel">{{ $product->excerpt }}</p>
-                    @endif
-
-                    @if ($product->description)
-                        <div class="mt-6 space-y-3 text-sm leading-relaxed text-steel whitespace-pre-line">
-                            {{ $product->description }}
-                        </div>
-                    @endif
 
                     @if ($product->isInStock())
                         <form
@@ -96,6 +118,7 @@
                         Pay online for collection or UK delivery. Simulated card checkout — ready to connect Stripe later.
                     </p>
                 </div>
+            </div>
             </div>
         </div>
     </section>

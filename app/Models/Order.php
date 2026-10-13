@@ -13,6 +13,7 @@ class Order extends Model
         'customer_id',
         'device_id',
         'fulfilment',
+        'payment_method',
         'scheduled_date',
         'scheduled_time',
         'subtotal',
@@ -21,6 +22,8 @@ class Order extends Model
         'status',
         'notes',
         'paid_at',
+        'stripe_session_id',
+        'stripe_payment_intent',
     ];
 
     protected function casts(): array

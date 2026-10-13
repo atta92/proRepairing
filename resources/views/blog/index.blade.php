@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Blog — ' . config('app.name'))
+@section('title', 'Blog — ' . $siteSettings->displayName())
 
-@section('meta_description', 'Repair tips, device guides and news from ' . config('app.name') . '.')
+@section('meta_description', 'Repair tips, device guides and news from ' . $siteSettings->displayName() . '.')
 
 @section('content')
-    <section class="bg-ink py-14 text-white sm:py-16">
+    <section class="site-grid-bg bg-ink py-14 text-white sm:py-16">
         <div class="site-container">
             <p class="text-sm font-semibold uppercase tracking-wider text-accent-light">Blog</p>
             <h1 class="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">

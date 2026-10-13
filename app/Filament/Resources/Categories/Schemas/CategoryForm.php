@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Categories\Schemas;
 
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
@@ -19,6 +20,10 @@ class CategoryForm
                     ->required()
                     ->live(onBlur: true)
                     ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state))),
+                TextInput::make('page_title')
+                    ->label('Page title')
+                    ->maxLength(255)
+                    ->helperText('Optional heading shown above the description on the category page.'),
                 TextInput::make('slug')
                     ->required()
                     ->unique(ignoreRecord: true),
@@ -31,7 +36,12 @@ class CategoryForm
                     ])
                     ->required(),
                 TextInput::make('excerpt')
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->helperText('Short summary used in listings.'),
+                Textarea::make('description')
+                    ->rows(4)
+                    ->columnSpanFull()
+                    ->helperText('Shown at the top of the category page.'),
                 FileUpload::make('image_path')
                     ->image()
                     ->directory('categories')

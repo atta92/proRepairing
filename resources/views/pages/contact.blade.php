@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Contact us — ' . config('app.name'))
+@section('title', 'Contact us — ' . $settings->displayName())
 
 @section('meta_description', Str::limit(strip_tags($settings->contact_intro ?? 'Contact us for repairs and quotes.'), 155))
 
 @section('content')
-    <section class="bg-ink py-14 text-white sm:py-16">
+    <section class="site-grid-bg bg-ink py-14 text-white sm:py-16">
         <div class="site-container">
             <p class="text-sm font-semibold uppercase tracking-wider text-accent-light">Contact</p>
             <h1 class="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">Contact us</h1>
@@ -45,6 +45,12 @@
                         </li>
                     @endif
                 </ul>
+
+                @include('partials.social-links', [
+                    'siteSettings' => $settings,
+                    'wrapClass' => 'mt-6 flex flex-wrap gap-2',
+                    'linkClass' => 'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-mist text-steel transition hover:border-accent hover:bg-accent/10 hover:text-accent',
+                ])
             </div>
 
             <div class="rounded-2xl border border-mist bg-white p-6 sm:p-8">

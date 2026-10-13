@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Your bag — ' . config('app.name'))
+@section('title', 'Your bag — ' . $siteSettings->displayName())
 
-@section('meta_description', 'Review items in your shopping bag at ' . config('app.name') . '.')
+@section('meta_description', 'Review items in your shopping bag at ' . $siteSettings->displayName() . '.')
 
 @section('content')
-    <section class="bg-ink py-10 text-white">
+    <section class="site-grid-bg bg-ink py-10 text-white">
         <div class="site-container">
             <h1 class="font-display text-3xl font-bold tracking-tight sm:text-4xl">Your bag</h1>
             <p class="mt-2 text-white/70">Review items before checkout.</p>

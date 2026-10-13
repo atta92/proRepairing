@@ -12,7 +12,7 @@
         </div>
     @else
         <div class="flex aspect-[16/10] items-center justify-center bg-gradient-to-br from-accent/15 to-ink/10">
-            <span class="font-display text-sm font-semibold uppercase tracking-wider text-accent">{{ config('app.name') }}</span>
+            <span class="font-display text-sm font-semibold uppercase tracking-wider text-accent">{{ $siteSettings->displayName() }}</span>
         </div>
     @endif
 

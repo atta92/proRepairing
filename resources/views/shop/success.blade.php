@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
-@section('title', 'Order confirmed — ' . config('app.name'))
+@section('title', 'Order confirmed — ' . $siteSettings->displayName())
 
-@section('meta_description', 'Your shop order has been confirmed. Thank you for shopping with ' . config('app.name') . '.')
+@section('meta_description', 'Your shop order has been confirmed. Thank you for shopping with ' . $siteSettings->displayName() . '.')
 
 @section('meta_robots', 'noindex, nofollow')
 

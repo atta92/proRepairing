@@ -1,6 +1,11 @@
 <?php
 
+use App\Http\Controllers\Account\DashboardController;
+use App\Http\Controllers\Account\OrderController as AccountOrderController;
+use App\Http\Controllers\Account\ProfileController;
 use App\Http\Controllers\Api\PriceCheckerController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CheckoutController;
@@ -9,10 +14,10 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\RobotsController;
-use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\ShopCartController;
 use App\Http\Controllers\ShopCheckoutController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -29,6 +34,8 @@ Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{post:slug}', [BlogController::class, 'show'])->name('blog.show');
 
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
+
+// Guest-friendly cart & checkout (account optional).
 Route::get('/shop/cart', [ShopCartController::class, 'show'])->name('shop.cart');
 Route::post('/shop/cart/add', [ShopCartController::class, 'add'])->name('shop.cart.add');
 Route::patch('/shop/cart/{accessory}', [ShopCartController::class, 'update'])->name('shop.cart.update');
@@ -37,9 +44,10 @@ Route::get('/shop/checkout', [ShopCheckoutController::class, 'show'])->name('sho
 Route::post('/shop/checkout', [ShopCheckoutController::class, 'store'])->name('shop.checkout.store');
 Route::post('/shop/checkout/coupon', [ShopCheckoutController::class, 'applyCoupon'])->name('shop.checkout.coupon.apply');
 Route::delete('/shop/checkout/coupon', [ShopCheckoutController::class, 'removeCoupon'])->name('shop.checkout.coupon.remove');
+Route::get('/shop/checkout/success/{shopOrder}', [ShopCheckoutController::class, 'success'])->name('shop.checkout.success');
 Route::get('/shop/checkout/stripe/success/{shopOrder}', [ShopCheckoutController::class, 'stripeSuccess'])->name('shop.checkout.stripe.success');
 Route::get('/shop/checkout/stripe/cancel/{shopOrder}', [ShopCheckoutController::class, 'stripeCancel'])->name('shop.checkout.stripe.cancel');
-Route::get('/shop/checkout/success/{shopOrder}', [ShopCheckoutController::class, 'success'])->name('shop.checkout.success');
+
 Route::get('/shop/{accessory:slug}', [ShopController::class, 'show'])->name('shop.show');
 
 Route::redirect('/accessories', '/shop');
@@ -54,7 +62,30 @@ Route::post('/repairs/{slug}/book', [DeviceController::class, 'book'])->name('de
 Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
+Route::get('/checkout/stripe/success/{order}', [CheckoutController::class, 'stripeSuccess'])->name('checkout.stripe.success');
+Route::get('/checkout/stripe/cancel/{order}', [CheckoutController::class, 'stripeCancel'])->name('checkout.stripe.cancel');
 
 Route::get('/api/models/{categorySlug}', [PriceCheckerController::class, 'models'])->name('api.models');
 
 Route::post('/quotes', [QuoteController::class, 'store'])->name('quotes.store');
+
+Route::middleware('guest')->group(function () {
+    Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
+    Route::post('/register', [RegisteredUserController::class, 'store']);
+    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+});
+
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('logout');
+
+Route::middleware(['auth', 'customer'])->prefix('account')->group(function () {
+    Route::get('/', DashboardController::class)->name('account.dashboard');
+    Route::get('/settings', [ProfileController::class, 'edit'])->name('account.profile');
+    Route::put('/settings', [ProfileController::class, 'update'])->name('account.profile.update');
+    Route::get('/repairs', [AccountOrderController::class, 'repairs'])->name('account.repairs');
+    Route::get('/repairs/{order}', [AccountOrderController::class, 'showRepair'])->name('account.repairs.show');
+    Route::get('/shop-orders', [AccountOrderController::class, 'shop'])->name('account.shop');
+    Route::get('/shop-orders/{shopOrder}', [AccountOrderController::class, 'showShop'])->name('account.shop.show');
+});

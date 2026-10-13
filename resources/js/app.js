@@ -28,6 +28,29 @@ document.addEventListener('alpine:init', () => {
     const boot = window.__SHOP_BAG__ || {};
     const cart = boot.cart || { lines: [], totals: { subtotal: 0, count: 0 } };
 
+    Alpine.store('lightbox', {
+        open: false,
+        src: '',
+        alt: '',
+        label: '',
+
+        show(src, alt = '', label = '') {
+            this.src = src || '';
+            this.alt = alt || '';
+            this.label = label || '';
+            this.open = true;
+            document.body.classList.add('overflow-hidden');
+        },
+
+        close() {
+            this.open = false;
+            this.src = '';
+            this.alt = '';
+            this.label = '';
+            document.body.classList.remove('overflow-hidden');
+        },
+    });
+
     Alpine.store('bag', {
         open: false,
         saving: false,
@@ -81,6 +104,11 @@ document.addEventListener('alpine:init', () => {
                         quantity,
                     }),
                 });
+
+                if (response.status === 401 || response.status === 419) {
+                    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.href);
+                    return;
+                }
 
                 const data = await response.json();
 
@@ -455,7 +483,131 @@ document.addEventListener('DOMContentLoaded', () => {
     initMobileAccordions();
     initPriceChecker();
     initQuoteModal();
+    initButtonLoading();
 });
+
+/**
+ * Universal processing spinner for submit / navigation buttons.
+ * Skip UI-only controls with data-no-spinner (or known toggle selectors).
+ */
+function initButtonLoading() {
+    const skipSelector = [
+        '[data-no-spinner]',
+        '[data-nav-trigger]',
+        '[data-mobile-trigger]',
+        '[data-bag-open]',
+        '[data-quote-open]',
+        '#nav-toggle',
+    ].join(', ');
+
+    const shouldSkip = (el) => {
+        if (!el || el.dataset.loading === '1') {
+            return true;
+        }
+
+        if (el.disabled || el.getAttribute('aria-disabled') === 'true') {
+            return true;
+        }
+
+        return el.matches(skipSelector) || Boolean(el.closest(skipSelector));
+    };
+
+    const needsDarkSpinner = (button) => {
+        if (button.classList.contains('btn-primary') || button.classList.contains('btn-secondary')) {
+            return false;
+        }
+
+        return true;
+    };
+
+    const setLoading = (button) => {
+        if (shouldSkip(button)) {
+            return;
+        }
+
+        button.dataset.loading = '1';
+        button.classList.add('btn-loading', 'is-processing');
+        button.setAttribute('aria-busy', 'true');
+
+        if ('disabled' in button) {
+            button.disabled = true;
+        }
+
+        let spinner = button.querySelector(':scope > .btn-spinner');
+
+        if (!spinner) {
+            spinner = document.createElement('span');
+            spinner.className = 'btn-spinner' + (needsDarkSpinner(button) ? ' is-dark' : '');
+            spinner.setAttribute('aria-hidden', 'true');
+            button.insertBefore(spinner, button.firstChild);
+        } else {
+            spinner.classList.remove('hidden');
+            spinner.style.display = 'inline-block';
+            if (needsDarkSpinner(button)) {
+                spinner.classList.add('is-dark');
+            }
+        }
+    };
+
+    document.addEventListener(
+        'submit',
+        (event) => {
+            const form = event.target;
+            if (!(form instanceof HTMLFormElement) || form.hasAttribute('data-no-spinner')) {
+                return;
+            }
+
+            const button =
+                event.submitter instanceof HTMLElement
+                    ? event.submitter
+                    : form.querySelector('button[type="submit"], input[type="submit"], button:not([type])');
+
+            setLoading(button);
+        },
+        true
+    );
+
+    document.addEventListener(
+        'click',
+        (event) => {
+            const el = event.target.closest(
+                'a.btn-primary, a.btn-secondary, a.btn-ghost, button.btn-primary, button.btn-secondary, button.btn-ghost, [data-loading-btn]'
+            );
+
+            if (!el || shouldSkip(el)) {
+                return;
+            }
+
+            if (el.tagName === 'A') {
+                const href = el.getAttribute('href') || '';
+                if (
+                    !href ||
+                    href === '#' ||
+                    href.startsWith('#') ||
+                    href.startsWith('javascript:') ||
+                    href.startsWith('mailto:') ||
+                    href.startsWith('tel:') ||
+                    el.hasAttribute('download') ||
+                    el.getAttribute('target') === '_blank'
+                ) {
+                    return;
+                }
+
+                setLoading(el);
+                return;
+            }
+
+            if (el.type === 'submit') {
+                return;
+            }
+
+            if (el.hasAttribute('data-loading-btn')) {
+                setLoading(el);
+            }
+        },
+        true
+    );
+}
 
 function initMobileNav() {
     const toggle = document.getElementById('nav-toggle');
@@ -603,13 +755,27 @@ function initPriceChecker() {
         out.textContent = 'Your price and turnaround will appear here.';
     }
 
+    function showOutSkeleton() {
+        out.className = 'pc-out mt-4';
+        out.innerHTML = `
+            <div class="space-y-3 text-left" aria-hidden="true">
+                <div class="skeleton skeleton-line is-sm w-1/3"></div>
+                <div class="skeleton skeleton-line is-lg w-1/2"></div>
+                <div class="skeleton skeleton-line w-2/3"></div>
+                <div class="skeleton skeleton-btn mt-2 w-full"></div>
+            </div>
+            <span class="sr-only">Loading prices…</span>
+        `;
+    }
+
     async function loadBrand(slug) {
         resetSelect(model, 'Loading models…');
         resetSelect(repair, 'Select a model first');
-        blank();
+        showOutSkeleton();
 
         if (!slug) {
             resetSelect(model, 'Select a brand first');
+            blank();
             return;
         }
 
@@ -627,8 +793,10 @@ function initPriceChecker() {
             current.forEach((item, index) => {
                 model.add(new Option(item.m, String(index)));
             });
+            blank();
         } catch (error) {
             resetSelect(model, 'Could not load models');
+            blank();
         }
     }
 

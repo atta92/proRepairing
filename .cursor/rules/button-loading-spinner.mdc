@@ -1,0 +1,17 @@
+---
+description: All action buttons must show a processing spinner while work is in progress
+alwaysApply: true
+---
+
+# Button loading spinner
+
+When a button triggers navigation, form submit, or any async/server work, show the moving circle spinner so users know processing is happening.
+
+## Do
+- Rely on the global `initButtonLoading()` behavior in `resources/js/app.js` for form submits and primary CTA links.
+- Use existing classes: `btn-primary`, `btn-secondary`, `btn-ghost`, plus `btn-spinner` / `btn-loading` / `is-processing`.
+- For custom async `type="button"` actions, add `data-loading-btn` or drive `btn-spinner` visibility from Alpine/state.
+
+## Don't
+- Put spinners on pure UI toggles (nav dropdowns, mobile menu, bag open, quote modal open).
+- Opt out unless needed — only use `data-no-spinner` on controls that must never show loading.

@@ -11,8 +11,10 @@ class Device extends Model
     protected $fillable = [
         'category_id',
         'name',
+        'page_title',
         'slug',
         'excerpt',
+        'description',
         'content',
         'image_path',
         'sort_order',

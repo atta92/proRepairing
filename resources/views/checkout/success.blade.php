@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
-@section('title', 'Booking confirmed — ' . config('app.name'))
+@section('title', 'Booking confirmed — ' . $siteSettings->displayName())
 
-@section('meta_description', 'Your repair booking is confirmed. We will be in touch from ' . config('app.name') . '.')
+@section('meta_description', 'Your repair booking is confirmed. We will be in touch from ' . $siteSettings->displayName() . '.')
 
 @section('meta_robots', 'noindex, nofollow')
 

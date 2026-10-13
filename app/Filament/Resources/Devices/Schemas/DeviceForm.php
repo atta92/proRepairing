@@ -25,12 +25,21 @@ class DeviceForm
                     ->required()
                     ->live(onBlur: true)
                     ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state) . '-repair')),
+                TextInput::make('page_title')
+                    ->label('Page title')
+                    ->maxLength(255)
+                    ->helperText('Optional heading shown above the description on the device page.'),
                 TextInput::make('slug')
                     ->required()
                     ->unique(ignoreRecord: true),
                 Textarea::make('excerpt')
                     ->rows(2)
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
+                    ->helperText('Short summary used in listings.'),
+                Textarea::make('description')
+                    ->rows(4)
+                    ->columnSpanFull()
+                    ->helperText('Shown at the top of the device repair page.'),
                 Textarea::make('content')
                     ->rows(5)
                     ->columnSpanFull(),

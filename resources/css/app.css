@@ -51,13 +51,103 @@
         @apply mx-auto w-full max-w-site px-4 sm:px-5 lg:px-6 xl:px-8;
     }
 
+    .site-grid-bg,
+    .site-grid-bg-soft,
+    .site-emoji-bg {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+    }
+
+    /* Sticky nav needs dropdowns to escape the header */
+    header.site-grid-bg,
+    header.site-emoji-bg {
+        overflow: visible;
+    }
+
+    /* White grid lines — dark surfaces */
+    .site-grid-bg::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.22;
+        background-image:
+            linear-gradient(rgba(255, 255, 255, 0.22) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.22) 1px, transparent 1px);
+        background-size: 40px 40px;
+    }
+
+    /* Ink grid lines — light surfaces */
+    .site-grid-bg-soft::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 1;
+        background-image:
+            linear-gradient(rgba(15, 23, 32, 0.07) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(15, 23, 32, 0.07) 1px, transparent 1px);
+        background-size: 40px 40px;
+    }
+
+    /* Phone + laptop emoji wash */
+    .site-emoji-bg::before {
+        content: '';
+        position: absolute;
+        inset: -25%;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.1;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='320' viewBox='0 0 360 320'%3E%3Ctext x='24' y='78' font-size='48'%3E%F0%9F%93%B1%3C/text%3E%3Ctext x='200' y='230' font-size='48'%3E%F0%9F%92%BB%3C/text%3E%3C/svg%3E");
+        background-size: 360px 320px;
+        background-repeat: repeat;
+        background-position: 0 0;
+        transform: rotate(-6deg);
+        filter: grayscale(0.2);
+        animation: site-emoji-drift 36s linear infinite;
+    }
+
+    @keyframes site-emoji-drift {
+        from {
+            background-position: 0 0;
+        }
+        to {
+            background-position: 360px 320px;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .site-emoji-bg::before {
+            animation: none;
+        }
+    }
+
+    .site-grid-bg > *,
+    .site-grid-bg-soft > *,
+    .site-emoji-bg > * {
+        position: relative;
+        z-index: 1;
+    }
+
     .btn-primary {
         @apply inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
     }
 
     .btn-primary:disabled,
-    .btn-loading {
+    .btn-loading,
+    .is-processing {
         @apply cursor-wait opacity-80;
+        pointer-events: none;
+    }
+
+    .is-processing {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
     }
 
     .btn-spinner {
@@ -107,6 +197,53 @@
     [data-nav-chevron].rotate-180,
     [data-mobile-chevron].rotate-180 {
         transform: rotate(180deg);
+    }
+
+    .pc-snake-border {
+        overflow: hidden;
+    }
+
+    .pc-snake-border.site-grid-bg-soft::before {
+        opacity: 1;
+        background-image:
+            linear-gradient(rgba(15, 23, 32, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(15, 23, 32, 0.1) 1px, transparent 1px);
+    }
+
+    .pc-snake-line {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        overflow: visible;
+        z-index: 2;
+    }
+
+    .pc-snake-line rect {
+        fill: none;
+        width: 100%;
+        height: 100%;
+        stroke: var(--color-accent);
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-dasharray: 18 82;
+        stroke-dashoffset: 0;
+        animation: pc-snake-crawl 2.8s linear infinite;
+    }
+
+    @keyframes pc-snake-crawl {
+        to {
+            stroke-dashoffset: -100;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .pc-snake-line rect {
+            animation: none;
+            stroke-dasharray: none;
+            opacity: 0.65;
+        }
     }
 
     .pc-select {
@@ -260,4 +397,81 @@
     .blog-content :where(img) {
         @apply my-6 rounded-xl;
     }
+
+    /* Skeleton loading UI */
+    .skeleton {
+        position: relative;
+        overflow: hidden;
+        background-color: #e2e8f0;
+        border-radius: 0.5rem;
+    }
+
+    .skeleton::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        transform: translateX(-100%);
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.55),
+            transparent
+        );
+        animation: skeleton-shimmer 1.35s ease-in-out infinite;
+    }
+
+    .skeleton-line {
+        height: 0.85rem;
+        width: 100%;
+    }
+
+    .skeleton-line.is-sm {
+        height: 0.65rem;
+    }
+
+    .skeleton-line.is-lg {
+        height: 1.15rem;
+    }
+
+    .skeleton-title {
+        height: 2rem;
+        width: min(18rem, 70%);
+        border-radius: 0.65rem;
+    }
+
+    .skeleton-avatar {
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: 9999px;
+    }
+
+    .skeleton-card {
+        height: 11rem;
+        border-radius: 1rem;
+    }
+
+    .skeleton-banner {
+        height: 10rem;
+        width: 100%;
+        border-radius: 1.25rem;
+    }
+
+    .skeleton-btn {
+        height: 2.5rem;
+        width: 8rem;
+        border-radius: 0.65rem;
+    }
+
+    @keyframes skeleton-shimmer {
+        100% {
+            transform: translateX(100%);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .skeleton::after {
+            animation: none;
+        }
+    }
+
 }

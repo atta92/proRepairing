@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Customer;
 use App\Models\ShopOrder;
 use App\Models\ShopOrderItem;
 use App\Services\CouponService;
+use App\Services\OrderMailer;
 use App\Services\ShopCart;
 use App\Services\StripeCheckoutService;
+use App\Support\CheckoutCustomer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ use Illuminate\View\View;
 
 class ShopCheckoutController extends Controller
 {
-    public function show(ShopCart $cart, StripeCheckoutService $stripe, CouponService $coupons): View|RedirectResponse
+    public function show(Request $request, ShopCart $cart, StripeCheckoutService $stripe, CouponService $coupons): View|RedirectResponse
     {
         if ($cart->isEmpty()) {
             return redirect()->route('shop.index')->with('error', 'Your bag is empty.');
@@ -26,8 +27,10 @@ class ShopCheckoutController extends Controller
         $fulfilment = old('fulfilment', 'collection');
         $totals = $coupons->withDiscount($cart->totals($fulfilment));
         $stripeConfigured = $stripe->isConfigured();
+        $user = $request->user();
+        $customer = $user?->customer;
 
-        return view('shop.checkout', compact('lines', 'totals', 'stripeConfigured'));
+        return view('shop.checkout', compact('lines', 'totals', 'stripeConfigured', 'user', 'customer'));
     }
 
     public function applyCoupon(Request $request, ShopCart $cart, CouponService $coupons): JsonResponse|RedirectResponse
@@ -63,7 +66,7 @@ class ShopCheckoutController extends Controller
         return $this->couponResponse(
             $request,
             true,
-            'Coupon ' . $coupon->code . ' applied.',
+            'Coupon '.$coupon->code.' applied.',
             $totals
         );
     }
@@ -125,18 +128,16 @@ class ShopCheckoutController extends Controller
             $totals = $coupons->withDiscount($cart->totals($validated['fulfilment']));
         }
 
-        $order = DB::transaction(function () use ($validated, $lines, $totals, $payOnline, $coupon, $coupons) {
-            $customer = Customer::query()->updateOrCreate(
-                ['email' => $validated['email']],
-                [
-                    'name' => $validated['name'],
-                    'phone' => $validated['phone'],
-                    'address_line_1' => $validated['address_line_1'] ?? null,
-                    'address_line_2' => $validated['address_line_2'] ?? null,
-                    'city' => $validated['city'] ?? null,
-                    'postcode' => $validated['postcode'] ?? null,
-                ]
-            );
+        $order = DB::transaction(function () use ($request, $validated, $lines, $totals, $payOnline, $coupon, $coupons) {
+            $customer = CheckoutCustomer::resolve($request->user(), [
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'address_line_1' => $validated['address_line_1'] ?? null,
+                'address_line_2' => $validated['address_line_2'] ?? null,
+                'city' => $validated['city'] ?? null,
+                'postcode' => $validated['postcode'] ?? null,
+            ]);
 
             $order = ShopOrder::query()->create([
                 'reference' => $this->nextReference(),
@@ -178,7 +179,7 @@ class ShopCheckoutController extends Controller
 
         if ($payOnline) {
             try {
-                $session = $stripe->createSession($order);
+                $session = $stripe->createShopSession($order);
                 $order->update(['stripe_session_id' => $session->id]);
 
                 return redirect()->away($session->url);
@@ -187,19 +188,20 @@ class ShopCheckoutController extends Controller
 
                 return back()
                     ->withInput()
-                    ->with('error', 'Could not start Stripe checkout: ' . $e->getMessage());
+                    ->with('error', 'Could not start Stripe checkout: '.$e->getMessage());
             }
         }
 
         $cart->clear();
         $coupons->clear();
+        $request->session()->put('shop_order_access', $order->id);
 
         return redirect()
             ->route('shop.checkout.success', $order)
             ->with('success', 'Order placed successfully. Pay when you collect.');
     }
 
-    public function stripeSuccess(Request $request, ShopOrder $shopOrder, ShopCart $cart, StripeCheckoutService $stripe, CouponService $coupons): RedirectResponse
+    public function stripeSuccess(Request $request, ShopOrder $shopOrder, ShopCart $cart, StripeCheckoutService $stripe, CouponService $coupons, OrderMailer $mailer): RedirectResponse
     {
         $sessionId = (string) $request->query('session_id', '');
 
@@ -222,7 +224,9 @@ class ShopCheckoutController extends Controller
             return redirect()->route('shop.checkout')->with('error', 'Payment was not completed.');
         }
 
-        if ($shopOrder->status !== 'paid') {
+        $alreadyPaid = $shopOrder->status === 'paid';
+
+        if (! $alreadyPaid) {
             DB::transaction(function () use ($shopOrder, $session) {
                 $shopOrder->refresh();
 
@@ -247,14 +251,17 @@ class ShopCheckoutController extends Controller
                         : ($session->payment_intent->id ?? null),
                 ]);
             });
+
+            $mailer->shopOrderPaid($shopOrder->fresh(['customer', 'items']));
         }
 
         $cart->clear();
         $coupons->clear();
+        $request->session()->put('shop_order_paid', $shopOrder->id);
 
         return redirect()
             ->route('shop.checkout.success', $shopOrder)
-            ->with('success', 'Payment successful — thank you!');
+            ->with('success', 'Payment successful — thank you! A confirmation email is on its way.');
     }
 
     public function stripeCancel(ShopOrder $shopOrder): RedirectResponse
@@ -268,9 +275,15 @@ class ShopCheckoutController extends Controller
             ->with('error', 'Payment cancelled. Your bag is unchanged — you can try again.');
     }
 
-    public function success(ShopOrder $shopOrder): View
+    public function success(Request $request, ShopOrder $shopOrder): View
     {
         $shopOrder->load(['customer', 'items']);
+
+        $owns = $request->user() && $shopOrder->customer?->user_id === $request->user()->id;
+        $justPaid = $request->session()->get('shop_order_paid') === $shopOrder->id;
+        $guestAccess = $request->session()->get('shop_order_access') === $shopOrder->id;
+
+        abort_unless($owns || $justPaid || $guestAccess, 403);
 
         return view('shop.success', ['order' => $shopOrder]);
     }
@@ -297,6 +310,6 @@ class ShopCheckoutController extends Controller
             $number = ((int) $matches[1]) + 1;
         }
 
-        return 'SHOP-' . $number;
+        return 'SHOP-'.$number;
     }
 }

@@ -22,6 +22,10 @@ class AccessoryForm
                     ->maxLength(255)
                     ->live(onBlur: true)
                     ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug((string) $state))),
+                TextInput::make('page_title')
+                    ->label('Page title')
+                    ->maxLength(255)
+                    ->helperText('Optional heading shown above the description on the product page.'),
                 TextInput::make('slug')
                     ->required()
                     ->maxLength(255)
@@ -41,7 +45,8 @@ class AccessoryForm
                     ->columnSpanFull(),
                 Textarea::make('description')
                     ->rows(6)
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
+                    ->helperText('Shown at the top of the product page.'),
                 TextInput::make('price')
                     ->required()
                     ->numeric()

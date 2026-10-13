@@ -17,6 +17,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        View::composer('*', function ($view) {
+            $view->with('siteSettings', SiteSetting::current());
+        });
+
         View::composer(['partials.header', 'partials.footer', 'partials.bag-drawer', 'layouts.app', 'home'], function ($view) {
             $view->with(
                 'navCategories',
@@ -29,7 +33,6 @@ class AppServiceProvider extends ServiceProvider
             $cart = app(ShopCart::class);
             $view->with('shopCartCount', $cart->count());
             $view->with('shopBagPayload', $cart->clientPayload());
-            $view->with('siteSettings', SiteSetting::current());
         });
     }
 }

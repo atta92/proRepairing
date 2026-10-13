@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', $category->name . ' — ' . config('app.name'))
+@section('title', $category->name . ' — ' . $siteSettings->displayName())
 
-@section('meta_description', $category->excerpt ?: 'Repair models and prices for ' . $category->name)
+@section('meta_description', $category->description ?: $category->excerpt ?: 'Repair models and prices for ' . $category->name)
 
 @section('content')
-    <section class="bg-ink py-12 text-white sm:py-16">
+    <section class="site-grid-bg bg-ink py-12 text-white sm:py-16">
         <div class="site-container">
             <p class="text-sm text-white/60">
                 <a href="{{ route('home') }}" class="hover:text-white">Home</a>
@@ -15,9 +15,6 @@
             <h1 class="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
                 {{ $category->name }}
             </h1>
-            @if ($category->excerpt)
-                <p class="mt-3 max-w-2xl text-lg text-white/75">{{ $category->excerpt }}</p>
-            @endif
             <p class="mt-4 text-sm text-accent-light">
                 Choose your model to see what needs fixing
             </p>
@@ -26,6 +23,29 @@
 
     <section class="bg-snow py-12 sm:py-16">
         <div class="site-container">
+            @if (filled($category->page_title) || filled($category->description) || filled($category->excerpt))
+                <div class="mx-auto mb-10 max-w-3xl text-center">
+                    @if (filled($category->page_title))
+                        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                            {{ $category->page_title }}
+                        </h2>
+                        <span class="mt-3 inline-block h-1 w-16 rounded-full bg-accent" aria-hidden="true"></span>
+                    @endif
+                    @if (filled($category->description))
+                        <p class="{{ filled($category->page_title) ? 'mt-5' : '' }} text-base leading-relaxed text-steel sm:text-lg whitespace-pre-line">{{ $category->description }}</p>
+                    @elseif (filled($category->excerpt))
+                        <p class="{{ filled($category->page_title) ? 'mt-5' : '' }} text-base leading-relaxed text-steel sm:text-lg">{{ $category->excerpt }}</p>
+                    @endif
+                </div>
+            @endif
+
+            <div class="mb-8 text-center">
+                <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                    Select Your {{ $category->name }} Model
+                </h2>
+                <span class="mt-3 inline-block h-1 w-16 rounded-full bg-accent" aria-hidden="true"></span>
+            </div>
+
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @forelse ($category->devices as $device)
                     <a

@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Shop checkout — ' . config('app.name'))
+@section('title', 'Shop checkout — ' . $siteSettings->displayName())
 
-@section('meta_description', 'Complete your accessory order securely at ' . config('app.name') . '.')
+@section('meta_description', 'Complete your accessory order securely at ' . $siteSettings->displayName() . '.')
 
 @section('meta_robots', 'noindex, nofollow')
 
 @section('content')
-    <section class="bg-ink py-10 text-white">
+    <section class="site-grid-bg bg-ink py-10 text-white">
         <div class="site-container">
             <h1 class="font-display text-3xl font-bold tracking-tight sm:text-4xl">Checkout</h1>
             <p class="mt-2 text-white/70">Pay online or collect and pay in store.</p>
@@ -28,11 +28,11 @@
         })"
     >
         <div class="site-container">
-            <div x-show="!ready" x-cloak>
+            <div x-show="!ready">
                 @include('partials.skeletons.checkout')
             </div>
 
-            <div x-show="ready">
+            <div x-show="ready" x-cloak>
                 @if ($errors->any())
                     <div class="mb-6 rounded-xl border border-signal/30 bg-signal/10 px-4 py-3 text-sm text-signal-dark">
                         <ul class="list-disc pl-5">
@@ -58,15 +58,15 @@
                             <div class="mt-4 grid gap-4 sm:grid-cols-2">
                                 <label class="block sm:col-span-2">
                                     <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Full name</span>
-                                    <input type="text" name="name" value="{{ old('name') }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                    <input type="text" name="name" value="{{ old('name', $user?->name) }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                                 </label>
                                 <label class="block">
                                     <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Email</span>
-                                    <input type="email" name="email" value="{{ old('email') }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                    <input type="email" name="email" value="{{ old('email', $user?->email) }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                                 </label>
                                 <label class="block">
                                     <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Phone</span>
-                                    <input type="tel" name="phone" value="{{ old('phone') }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                    <input type="tel" name="phone" value="{{ old('phone', $user?->phone ?: $customer?->phone) }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                                 </label>
                             </div>
                         </div>
@@ -89,19 +89,19 @@
                             <div class="mt-4 grid gap-4 sm:grid-cols-2" x-show="fulfilment === 'delivery'" x-cloak>
                                 <label class="block sm:col-span-2">
                                     <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Address line 1</span>
-                                    <input type="text" name="address_line_1" value="{{ old('address_line_1') }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                    <input type="text" name="address_line_1" value="{{ old('address_line_1', $customer?->address_line_1) }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                                 </label>
                                 <label class="block sm:col-span-2">
                                     <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Address line 2</span>
-                                    <input type="text" name="address_line_2" value="{{ old('address_line_2') }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                    <input type="text" name="address_line_2" value="{{ old('address_line_2', $customer?->address_line_2) }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                                 </label>
                                 <label class="block">
                                     <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">City</span>
-                                    <input type="text" name="city" value="{{ old('city') }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                    <input type="text" name="city" value="{{ old('city', $customer?->city) }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                                 </label>
                                 <label class="block">
                                     <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Postcode</span>
-                                    <input type="text" name="postcode" value="{{ old('postcode') }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                    <input type="text" name="postcode" value="{{ old('postcode', $customer?->postcode) }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                                 </label>
                             </div>
                         </div>

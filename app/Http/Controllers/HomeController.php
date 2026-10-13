@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Accessory;
+use App\Models\BeforeAfter;
 use App\Models\Category;
 use App\Models\Device;
 use App\Models\DeviceRepair;
@@ -32,12 +33,18 @@ class HomeController extends Controller
             ->limit(4)
             ->get();
 
+        $beforeAfters = BeforeAfter::query()
+            ->active()
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
         $stats = [
             'devices' => Device::query()->where('is_active', true)->count(),
             'categories' => $categories->count(),
             'repairs' => DeviceRepair::query()->where('is_active', true)->count(),
         ];
 
-        return view('home', compact('categories', 'stats', 'posts', 'accessories'));
+        return view('home', compact('categories', 'stats', 'posts', 'accessories', 'beforeAfters'));
     }
 }

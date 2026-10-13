@@ -1,17 +1,45 @@
 @extends('layouts.app')
 
-@section('title', $accessory->name . ' — ' . config('app.name'))
+@section('title', $accessory->name . ' — ' . $siteSettings->displayName())
 
 @section('meta_description', $accessory->excerpt ?: Str::limit(strip_tags($accessory->description), 155))
 
 @section('content')
+    <section class="site-grid-bg bg-ink py-12 text-white sm:py-14">
+        <div class="site-container">
+            <p class="text-sm text-white/60">
+                <a href="{{ route('accessories.index') }}" class="hover:text-white">Accessories</a>
+                <span class="mx-2">/</span>
+                <span class="text-white">{{ $accessory->name }}</span>
+            </p>
+            <p class="mt-4 text-sm font-semibold uppercase tracking-wider text-accent-light">
+                {{ $accessory->category_label }}
+            </p>
+            <h1 class="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                {{ $accessory->name }}
+            </h1>
+        </div>
+    </section>
+
     <section class="bg-snow py-10 sm:py-14">
         <div class="site-container">
-            <a href="{{ route('accessories.index') }}" class="text-sm font-semibold text-accent hover:text-accent-dark">
-                ← All accessories
-            </a>
+            @if (filled($accessory->page_title) || filled($accessory->description) || filled($accessory->excerpt))
+                <div class="mx-auto mb-10 max-w-3xl text-center">
+                    @if (filled($accessory->page_title))
+                        <h2 class="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                            {{ $accessory->page_title }}
+                        </h2>
+                        <span class="mt-3 inline-block h-1 w-16 rounded-full bg-accent" aria-hidden="true"></span>
+                    @endif
+                    @if (filled($accessory->description))
+                        <p class="{{ filled($accessory->page_title) ? 'mt-5' : '' }} text-base leading-relaxed text-steel sm:text-lg whitespace-pre-line">{{ $accessory->description }}</p>
+                    @elseif (filled($accessory->excerpt))
+                        <p class="{{ filled($accessory->page_title) ? 'mt-5' : '' }} text-base leading-relaxed text-steel sm:text-lg">{{ $accessory->excerpt }}</p>
+                    @endif
+                </div>
+            @endif
 
-            <div class="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-12 lg:items-start">
+            <div class="grid gap-8 lg:grid-cols-2 lg:gap-12 lg:items-start">
                 <div class="overflow-hidden rounded-2xl border border-mist bg-white">
                     @if ($accessory->image_path)
                         <img
@@ -27,14 +55,7 @@
                 </div>
 
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-accent">
-                        {{ $accessory->category_label }}
-                    </p>
-                    <h1 class="mt-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-                        {{ $accessory->name }}
-                    </h1>
-
-                    <div class="mt-4 flex flex-wrap items-baseline gap-3">
+                    <div class="flex flex-wrap items-baseline gap-3">
                         <span class="font-display text-3xl font-bold text-ink">{{ $accessory->formatted_price }}</span>
                         @if ($accessory->compare_at_price && $accessory->compare_at_price > $accessory->price)
                             <span class="text-lg text-steel/70 line-through">
@@ -42,16 +63,6 @@
                             </span>
                         @endif
                     </div>
-
-                    @if ($accessory->excerpt)
-                        <p class="mt-4 text-base leading-relaxed text-steel">{{ $accessory->excerpt }}</p>
-                    @endif
-
-                    @if ($accessory->description)
-                        <div class="mt-6 space-y-3 text-sm leading-relaxed text-steel whitespace-pre-line">
-                            {{ $accessory->description }}
-                        </div>
-                    @endif
 
                     <div class="mt-8 flex flex-wrap gap-3">
                         <button type="button" class="btn-primary" data-quote-open>
