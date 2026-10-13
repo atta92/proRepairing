@@ -1,0 +1,753 @@
+import './bootstrap';
+import Alpine from 'alpinejs';
+
+window.Alpine = Alpine;
+
+function syncBagHeader(count) {
+    const trigger = document.querySelector('[data-bag-open]');
+    if (!trigger) {
+        return;
+    }
+
+    trigger.setAttribute('aria-label', count > 0 ? `Shopping bag (${count} items)` : 'Shopping bag');
+
+    let badge = trigger.querySelector('.cart-count');
+    if (count > 0) {
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'cart-count';
+            trigger.appendChild(badge);
+        }
+        badge.textContent = count > 99 ? '99+' : String(count);
+    } else if (badge) {
+        badge.remove();
+    }
+}
+
+document.addEventListener('alpine:init', () => {
+    const boot = window.__SHOP_BAG__ || {};
+    const cart = boot.cart || { lines: [], totals: { subtotal: 0, count: 0 } };
+
+    Alpine.store('bag', {
+        open: false,
+        saving: false,
+        addingId: null,
+        removingId: null,
+        navigating: false,
+        csrf: boot.csrf || '',
+        addUrl: boot.addUrl || '/shop/cart/add',
+        lines: cart.lines || [],
+        totals: cart.totals || { subtotal: 0, count: 0 },
+
+        money(value) {
+            return '£' + Number(value || 0).toFixed(2);
+        },
+
+        openDrawer() {
+            this.open = true;
+            document.body.classList.add('overflow-hidden');
+        },
+
+        close() {
+            this.open = false;
+            document.body.classList.remove('overflow-hidden');
+        },
+
+        startCheckout() {
+            this.navigating = true;
+        },
+
+        applyCart(nextCart) {
+            this.lines = nextCart.lines || [];
+            this.totals = nextCart.totals || { subtotal: 0, count: 0 };
+            syncBagHeader(this.totals.count || 0);
+        },
+
+        async addProduct(accessoryId, quantity = 1) {
+            this.saving = true;
+            this.addingId = accessoryId;
+
+            try {
+                const response = await fetch(this.addUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': this.csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({
+                        accessory_id: accessoryId,
+                        quantity,
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.ok) {
+                    throw new Error(data.message || 'Could not add item');
+                }
+
+                this.applyCart(data.cart);
+                this.openDrawer();
+            } catch (error) {
+                alert(error.message || 'Could not add item to bag.');
+            } finally {
+                this.saving = false;
+                this.addingId = null;
+            }
+        },
+
+        async changeQty(line, quantity) {
+            quantity = Math.max(0, Math.min(20, Number(quantity) || 0));
+
+            if (quantity <= 0) {
+                return this.removeLine(line);
+            }
+
+            // Instant UI update — sync to server in the background.
+            line.quantity = quantity;
+            line.line_total = Math.round(line.price * quantity * 100) / 100;
+            this.recalcTotals();
+
+            this._qtyTimers = this._qtyTimers || {};
+            clearTimeout(this._qtyTimers[line.id]);
+            this._qtyTimers[line.id] = setTimeout(() => {
+                this.persistQty(line);
+            }, 250);
+        },
+
+        recalcTotals() {
+            const subtotal = this.lines.reduce((sum, item) => sum + Number(item.line_total || 0), 0);
+            const count = this.lines.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+            this.totals = {
+                ...this.totals,
+                subtotal: Math.round(subtotal * 100) / 100,
+                count,
+            };
+            syncBagHeader(count);
+        },
+
+        async persistQty(line) {
+            try {
+                const response = await fetch(line.update_url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': this.csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({ quantity: line.quantity }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Update failed');
+                }
+
+                const data = await response.json();
+                if (data.cart) {
+                    this.applyCart(data.cart);
+                }
+            } catch (error) {
+                // keep optimistic UI; next interaction can resync
+            }
+        },
+
+        async removeLine(line) {
+            this.removingId = line.id;
+            this.lines = this.lines.filter((item) => item.id !== line.id);
+            this.recalcTotals();
+
+            try {
+                const response = await fetch(line.remove_url, {
+                    method: 'DELETE',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': this.csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Remove failed');
+                }
+
+                const data = await response.json();
+                if (data.cart) {
+                    this.applyCart(data.cart);
+                }
+            } catch (error) {
+                // ignore
+            } finally {
+                this.removingId = null;
+            }
+        },
+    });
+});
+
+window.shopCart = function shopCart(config) {
+    return {
+        csrf: config.csrf,
+        lines: config.lines,
+        totals: config.totals,
+        removingId: null,
+        navigating: false,
+        ready: false,
+        _qtyTimers: {},
+
+        init() {
+            setTimeout(() => {
+                this.ready = true;
+            }, 280);
+        },
+
+        money(value) {
+            return '£' + Number(value || 0).toFixed(2);
+        },
+
+        updateHeaderCount(count) {
+            syncBagHeader(count);
+            if (window.Alpine?.store('bag')) {
+                Alpine.store('bag').totals = { ...Alpine.store('bag').totals, count };
+            }
+        },
+
+        recalcTotals() {
+            const subtotal = this.lines.reduce((sum, item) => sum + Number(item.line_total || 0), 0);
+            const count = this.lines.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+            this.totals = {
+                ...this.totals,
+                subtotal: Math.round(subtotal * 100) / 100,
+                count,
+            };
+            this.updateHeaderCount(count);
+        },
+
+        changeQty(line, quantity) {
+            quantity = Math.max(0, Math.min(20, Number(quantity) || 0));
+
+            if (quantity <= 0) {
+                return this.removeLine(line);
+            }
+
+            line.quantity = quantity;
+            line.line_total = Math.round(line.price * quantity * 100) / 100;
+            this.recalcTotals();
+
+            clearTimeout(this._qtyTimers[line.id]);
+            this._qtyTimers[line.id] = setTimeout(() => {
+                this.persistQty(line);
+            }, 250);
+        },
+
+        async persistQty(line) {
+            try {
+                const response = await fetch(line.update_url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': this.csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({ quantity: line.quantity }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Update failed');
+                }
+
+                const data = await response.json();
+
+                if (data.cart) {
+                    this.lines = data.cart.lines;
+                    this.totals = data.cart.totals;
+                    if (window.Alpine?.store('bag')) {
+                        Alpine.store('bag').applyCart(data.cart);
+                    } else {
+                        this.updateHeaderCount(data.totals.count);
+                    }
+                }
+
+                if (data.empty) {
+                    window.location.reload();
+                }
+            } catch (error) {
+                // keep optimistic UI
+            }
+        },
+
+        async removeLine(line) {
+            this.removingId = line.id;
+            this.lines = this.lines.filter((item) => item.id !== line.id);
+            this.recalcTotals();
+
+            try {
+                const response = await fetch(line.remove_url, {
+                    method: 'DELETE',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': this.csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Remove failed');
+                }
+
+                const data = await response.json();
+
+                if (data.cart) {
+                    this.lines = data.cart.lines;
+                    this.totals = data.cart.totals;
+                    if (window.Alpine?.store('bag')) {
+                        Alpine.store('bag').applyCart(data.cart);
+                    } else {
+                        this.updateHeaderCount(data.totals.count);
+                    }
+                }
+
+                if (data.empty) {
+                    window.location.reload();
+                }
+            } catch (error) {
+                // keep optimistic removal
+            } finally {
+                this.removingId = null;
+            }
+        },
+    };
+};
+
+window.shopCheckout = function shopCheckout(config = {}) {
+    const initialFulfilment = config.fulfilment || 'collection';
+
+    return {
+        ready: false,
+        submitting: false,
+        couponBusy: false,
+        couponInput: '',
+        couponError: '',
+        couponMessage: '',
+        coupon: config.coupon || null,
+        fulfilment: initialFulfilment,
+        subtotal: Number(config.subtotal || 0),
+        shipping: Number(config.shipping ?? (initialFulfilment === 'delivery' ? 3.99 : 0)),
+        discount: Number(config.discount || 0),
+        applyUrl: config.applyUrl || '/shop/checkout/coupon',
+        removeUrl: config.removeUrl || '/shop/checkout/coupon',
+        csrf: config.csrf || '',
+
+        get total() {
+            return Math.max(0, this.subtotal + this.shipping - this.discount);
+        },
+
+        init() {
+            setTimeout(() => {
+                this.ready = true;
+                this.syncTotals();
+            }, 280);
+        },
+
+        money(value) {
+            return '£' + Number(value || 0).toFixed(2);
+        },
+
+        syncTotals() {
+            const checked = document.querySelector('input[name="fulfilment"]:checked')?.value || this.fulfilment;
+            this.fulfilment = checked;
+            this.shipping = checked === 'delivery' ? 3.99 : 0;
+        },
+
+        applyTotals(totals) {
+            this.subtotal = Number(totals.subtotal || 0);
+            this.shipping = Number(totals.shipping_amount || 0);
+            this.discount = Number(totals.discount_amount || 0);
+            this.coupon = totals.coupon || null;
+        },
+
+        async applyCoupon() {
+            this.couponError = '';
+            this.couponMessage = '';
+            const code = (this.couponInput || '').trim();
+
+            if (!code) {
+                this.couponError = 'Enter a coupon code.';
+                return;
+            }
+
+            this.couponBusy = true;
+            this.syncTotals();
+
+            try {
+                const response = await fetch(this.applyUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': this.csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({
+                        coupon_code: code,
+                        fulfilment: this.fulfilment,
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.ok) {
+                    throw new Error(data.message || 'Could not apply coupon.');
+                }
+
+                this.applyTotals(data.totals);
+                this.couponInput = '';
+                this.couponMessage = data.message || 'Coupon applied.';
+            } catch (error) {
+                this.couponError = error.message || 'Could not apply coupon.';
+            } finally {
+                this.couponBusy = false;
+            }
+        },
+
+        async removeCoupon() {
+            this.couponBusy = true;
+            this.couponError = '';
+            this.couponMessage = '';
+            this.syncTotals();
+
+            try {
+                const response = await fetch(this.removeUrl, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': this.csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({ fulfilment: this.fulfilment }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.ok) {
+                    throw new Error(data.message || 'Could not remove coupon.');
+                }
+
+                this.applyTotals(data.totals);
+                this.couponMessage = data.message || 'Coupon removed.';
+            } catch (error) {
+                this.couponError = error.message || 'Could not remove coupon.';
+            } finally {
+                this.couponBusy = false;
+            }
+        },
+    };
+};
+
+Alpine.start();
+
+document.addEventListener('DOMContentLoaded', () => {
+    initMobileNav();
+    initDesktopDropdowns();
+    initMobileAccordions();
+    initPriceChecker();
+    initQuoteModal();
+});
+
+function initMobileNav() {
+    const toggle = document.getElementById('nav-toggle');
+    const panel = document.getElementById('nav-panel');
+
+    if (!toggle || !panel) {
+        return;
+    }
+
+    const openLabel = 'Open menu';
+    const closeLabel = 'Close menu';
+
+    toggle.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const isOpen = panel.classList.toggle('hidden') === false;
+        toggle.setAttribute('aria-expanded', String(isOpen));
+        toggle.setAttribute('aria-label', isOpen ? closeLabel : openLabel);
+
+        if (!isOpen) {
+            closeAllMobileAccordions();
+        }
+    });
+
+    panel.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => {
+            panel.classList.add('hidden');
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.setAttribute('aria-label', openLabel);
+            closeAllMobileAccordions();
+        });
+    });
+}
+
+function initDesktopDropdowns() {
+    const dropdowns = document.querySelectorAll('[data-nav-dropdown]');
+
+    if (!dropdowns.length) {
+        return;
+    }
+
+    const closeAll = (except = null) => {
+        dropdowns.forEach((dropdown) => {
+            if (dropdown === except) {
+                return;
+            }
+
+            const trigger = dropdown.querySelector('[data-nav-trigger]');
+            const panel = dropdown.querySelector('[data-nav-panel]');
+            const chevron = dropdown.querySelector('[data-nav-chevron]');
+
+            panel?.classList.add('hidden');
+            trigger?.setAttribute('aria-expanded', 'false');
+            chevron?.classList.remove('rotate-180');
+        });
+    };
+
+    dropdowns.forEach((dropdown) => {
+        const trigger = dropdown.querySelector('[data-nav-trigger]');
+        const panel = dropdown.querySelector('[data-nav-panel]');
+        const chevron = dropdown.querySelector('[data-nav-chevron]');
+
+        if (!trigger || !panel) {
+            return;
+        }
+
+        trigger.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const willOpen = panel.classList.contains('hidden');
+            closeAll(dropdown);
+
+            panel.classList.toggle('hidden', !willOpen);
+            trigger.setAttribute('aria-expanded', String(willOpen));
+            chevron?.classList.toggle('rotate-180', willOpen);
+        });
+    });
+
+    document.addEventListener('click', () => closeAll());
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeAll();
+        }
+    });
+}
+
+function initMobileAccordions() {
+    document.querySelectorAll('[data-mobile-accordion]').forEach((item) => {
+        const trigger = item.querySelector('[data-mobile-trigger]');
+        const panel = item.querySelector('[data-mobile-panel]');
+        const chevron = item.querySelector('[data-mobile-chevron]');
+
+        if (!trigger || !panel) {
+            return;
+        }
+
+        trigger.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const willOpen = panel.classList.contains('hidden');
+
+            closeAllMobileAccordions(item);
+
+            panel.classList.toggle('hidden', !willOpen);
+            trigger.setAttribute('aria-expanded', String(willOpen));
+            chevron?.classList.toggle('rotate-180', willOpen);
+        });
+    });
+}
+
+function closeAllMobileAccordions(except = null) {
+    document.querySelectorAll('[data-mobile-accordion]').forEach((item) => {
+        if (item === except) {
+            return;
+        }
+
+        item.querySelector('[data-mobile-panel]')?.classList.add('hidden');
+        item.querySelector('[data-mobile-trigger]')?.setAttribute('aria-expanded', 'false');
+        item.querySelector('[data-mobile-chevron]')?.classList.remove('rotate-180');
+    });
+}
+
+function initPriceChecker() {
+    const brand = document.getElementById('pc-brand');
+    const model = document.getElementById('pc-model');
+    const repair = document.getElementById('pc-repair');
+    const out = document.getElementById('pc-out');
+
+    if (!brand || !model || !repair || !out) {
+        return;
+    }
+
+    const cache = {};
+    let current = [];
+
+    function resetSelect(select, text, disabled = true) {
+        select.innerHTML = '';
+        select.add(new Option(text, ''));
+        select.disabled = disabled;
+        select.classList.toggle('is-disabled', disabled);
+    }
+
+    function blank() {
+        out.className = 'pc-out mt-4';
+        out.textContent = 'Your price and turnaround will appear here.';
+    }
+
+    async function loadBrand(slug) {
+        resetSelect(model, 'Loading models…');
+        resetSelect(repair, 'Select a model first');
+        blank();
+
+        if (!slug) {
+            resetSelect(model, 'Select a brand first');
+            return;
+        }
+
+        try {
+            if (!cache[slug]) {
+                const response = await fetch(`/api/models/${encodeURIComponent(slug)}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load models');
+                }
+                cache[slug] = await response.json();
+            }
+
+            current = cache[slug];
+            resetSelect(model, 'Select your model…', false);
+            current.forEach((item, index) => {
+                model.add(new Option(item.m, String(index)));
+            });
+        } catch (error) {
+            resetSelect(model, 'Could not load models');
+        }
+    }
+
+    brand.addEventListener('change', () => {
+        loadBrand(brand.value);
+    });
+
+    model.addEventListener('change', () => {
+        resetSelect(repair, 'Select your repair…');
+        blank();
+
+        if (model.value === '') {
+            resetSelect(repair, 'Select a model first');
+            return;
+        }
+
+        const selected = current[Number(model.value)];
+        if (!selected) {
+            return;
+        }
+
+        resetSelect(repair, 'Select your repair…', false);
+        selected.r.forEach((item, index) => {
+            repair.add(new Option(item.n, String(index)));
+        });
+    });
+
+    repair.addEventListener('change', () => {
+        if (repair.value === '') {
+            blank();
+            return;
+        }
+
+        const selectedModel = current[Number(model.value)];
+        const selectedRepair = selectedModel?.r[Number(repair.value)];
+
+        if (!selectedModel || !selectedRepair) {
+            blank();
+            return;
+        }
+
+        const turnaround = selectedRepair.t || 'Same day';
+        const warranty = selectedRepair.w || 12;
+
+        out.className = 'pc-out is-live mt-4';
+        out.innerHTML = `
+            <div class="flex flex-wrap items-end justify-between gap-3">
+                <span>
+                    <span class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-steel">Guide price from</span>
+                    <span class="font-display text-3xl font-bold text-accent">${selectedRepair.p}</span>
+                </span>
+                <span class="text-right text-sm font-medium text-steel">
+                    ${selectedRepair.n}<br>
+                    ${turnaround} · ${warranty}-month warranty
+                </span>
+            </div>
+            <a href="${selectedModel.u}" class="btn-primary mt-4 w-full rounded-full">
+                See ${selectedModel.m} repair details
+            </a>
+        `;
+    });
+}
+
+function initQuoteModal() {
+    const modal = document.getElementById('quote-modal');
+
+    if (!modal) {
+        return;
+    }
+
+    const dialog = modal.querySelector('[data-quote-dialog]');
+    const openers = document.querySelectorAll('[data-quote-open]');
+    const closers = modal.querySelectorAll('[data-quote-close]');
+    const shouldAutoOpen = modal.dataset.openOnLoad === '1';
+
+    const open = (event) => {
+        if (event) {
+            event.preventDefault();
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('overflow-hidden');
+        modal.querySelector('input[name="name"]')?.focus();
+    };
+
+    const close = () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('overflow-hidden');
+    };
+
+    openers.forEach((button) => {
+        button.addEventListener('click', open);
+    });
+
+    closers.forEach((button) => {
+        button.addEventListener('click', close);
+    });
+
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            close();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+            close();
+        }
+    });
+
+    dialog?.addEventListener('click', (event) => {
+        event.stopPropagation();
+    });
+
+    if (shouldAutoOpen) {
+        open();
+    }
+}

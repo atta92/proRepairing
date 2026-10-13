@@ -1,0 +1,21 @@
+{
+    "name": "Repairing",
+    "short_name": "Repairing",
+    "icons": [
+        {
+            "src": "/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        },
+        {
+            "src": "/apple-touch-icon.png",
+            "sizes": "180x180",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "theme_color": "#0d9488",
+    "background_color": "#0f1720",
+    "display": "standalone"
+}
