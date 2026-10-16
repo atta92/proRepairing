@@ -10,7 +10,7 @@ Order **{{ $order->reference }}** has been paid online.
 
 <x-mail::panel>
 @foreach ($order->items as $item)
-{{ $item->name }} × {{ $item->quantity }} — £{{ number_format((float) $item->price * $item->quantity, 2) }}  
+{{ $item->name }} × {{ $item->quantity }} - £{{ number_format((float) $item->price * $item->quantity, 2) }}  
 @endforeach
 </x-mail::panel>
 

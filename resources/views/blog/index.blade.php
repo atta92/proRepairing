@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Blog — ' . $siteSettings->displayName())
+@section('title', 'Blog - ' . $siteSettings->displayName())
 
 @section('meta_description', 'Repair tips, device guides and news from ' . $siteSettings->displayName() . '.')
 
@@ -12,7 +12,7 @@
                 Tips, guides &amp; repair news
             </h1>
             <p class="mt-3 max-w-2xl text-base text-white/70">
-                Practical advice from our technicians — screens, batteries, water damage and more.
+                Practical advice from our technicians - screens, batteries, water damage and more.
             </p>
         </div>
     </section>

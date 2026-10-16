@@ -21,6 +21,13 @@
             <h3 class="mt-1.5 font-display text-sm font-semibold leading-snug text-ink group-hover:text-accent-dark sm:mt-2 sm:text-lg">
                 {{ $product->name }}
             </h3>
+
+            @include('partials.product-rating', [
+                'product' => $product,
+                'class' => 'mt-1.5',
+                'showEmpty' => false,
+            ])
+
             @if ($product->excerpt)
                 <p class="mt-2 hidden flex-1 text-sm leading-relaxed text-steel sm:block">
                     {{ Str::limit($product->excerpt, 90) }}
@@ -37,7 +44,7 @@
         </div>
     </a>
 
-    @if ($product->isInStock())
+    @if ($product->isInStock() && ! $product->hasVariants())
         <button
             type="button"
             class="absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white shadow-md transition hover:bg-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-wait disabled:opacity-80 sm:bottom-4 sm:right-4"
@@ -48,5 +55,13 @@
             <span class="btn-spinner is-sm" x-show="$store.bag.addingId === {{ $product->id }}" x-cloak></span>
             <i class="bi bi-plus-lg text-base leading-none" aria-hidden="true" x-show="$store.bag.addingId !== {{ $product->id }}"></i>
         </button>
+    @elseif ($product->hasVariants())
+        <a
+            href="{{ route('shop.show', $product) }}"
+            class="absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-white shadow-md transition hover:bg-accent-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:bottom-4 sm:right-4"
+            aria-label="Choose options for {{ $product->name }}"
+        >
+            <i class="bi bi-sliders text-base leading-none" aria-hidden="true"></i>
+        </a>
     @endif
 </article>

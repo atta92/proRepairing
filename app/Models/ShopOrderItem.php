@@ -10,7 +10,9 @@ class ShopOrderItem extends Model
     protected $fillable = [
         'shop_order_id',
         'accessory_id',
+        'accessory_variant_id',
         'name',
+        'options_label',
         'type',
         'price',
         'quantity',
@@ -32,5 +34,10 @@ class ShopOrderItem extends Model
     public function accessory(): BelongsTo
     {
         return $this->belongsTo(Accessory::class);
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(AccessoryVariant::class, 'accessory_variant_id');
     }
 }

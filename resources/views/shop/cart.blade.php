@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Your bag — ' . $siteSettings->displayName())
+@section('title', 'Your bag - ' . $siteSettings->displayName())
 
 @section('meta_description', 'Review items in your shopping bag at ' . $siteSettings->displayName() . '.')
 
@@ -24,17 +24,18 @@
                     x-data="shopCart({
                         csrf: @js(csrf_token()),
                         lines: @js($lines->map(fn ($line) => [
-                            'id' => $line['product']->id,
-                            'name' => $line['product']->name,
-                            'type' => $line['product']->type_label,
+                            'id' => $line['key'],
+                            'name' => $line['name'],
+                            'options' => $line['options_label'],
+                            'type' => $line['type_label'],
                             'url' => route('shop.show', $line['product']),
-                            'image' => $line['product']->image_path ? asset('storage/' . $line['product']->image_path) : null,
-                            'price' => (float) $line['product']->price,
-                            'price_formatted' => $line['product']->formatted_price,
+                            'image' => $line['image_path'] ? asset('storage/' . $line['image_path']) : null,
+                            'price' => (float) $line['price'],
+                            'price_formatted' => $line['price_formatted'],
                             'quantity' => (int) $line['quantity'],
                             'line_total' => (float) $line['line_total'],
-                            'update_url' => route('shop.cart.update', $line['product']->id),
-                            'remove_url' => route('shop.cart.remove', $line['product']->id),
+                            'update_url' => route('shop.cart.update', str_replace(':', '-', $line['key'])),
+                            'remove_url' => route('shop.cart.remove', str_replace(':', '-', $line['key'])),
                         ])->values()),
                         totals: @js($totals),
                     })"
@@ -60,6 +61,7 @@
                                     <div class="min-w-0 flex-1">
                                         <a :href="line.url" class="font-display font-semibold text-ink hover:text-accent" x-text="line.name"></a>
                                         <p class="mt-0.5 text-xs uppercase tracking-wider text-steel/70" x-text="line.type"></p>
+                                        <p class="mt-0.5 text-sm text-steel" x-show="line.options" x-text="line.options"></p>
                                         <p class="mt-2 font-semibold text-ink" x-text="line.price_formatted"></p>
 
                                         <div class="mt-3 flex flex-wrap items-center gap-3">

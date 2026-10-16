@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Accessory;
+use App\Models\AccessoryVariant;
 use App\Services\ShopCart;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,54 +23,81 @@ class ShopCartController extends Controller
     {
         $validated = $request->validate([
             'accessory_id' => ['required', 'integer', 'exists:accessories,id'],
+            'variant_id' => ['nullable', 'integer', 'exists:accessory_variants,id'],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:20'],
         ]);
 
         $product = Accessory::query()
             ->active()
+            ->with('activeVariants')
             ->findOrFail($validated['accessory_id']);
 
-        if (! $product->isInStock()) {
-            if ($request->wantsJson()) {
-                return response()->json(['ok' => false, 'message' => 'That item is currently out of stock.'], 422);
+        $quantity = (int) ($validated['quantity'] ?? 1);
+        $variant = null;
+
+        if ($product->hasVariants()) {
+            $variantId = $validated['variant_id'] ?? null;
+
+            if (! $variantId) {
+                return $this->fail($request, 'Please choose storage, colour and other options first.');
             }
 
-            return back()->with('error', 'That item is currently out of stock.');
-        }
+            $variant = AccessoryVariant::query()
+                ->where('accessory_id', $product->id)
+                ->where('is_active', true)
+                ->find($variantId);
 
-        $cart->add($product->id, (int) ($validated['quantity'] ?? 1));
+            if (! $variant) {
+                return $this->fail($request, 'That option is no longer available.');
+            }
+
+            if (! $variant->isInStock()) {
+                return $this->fail($request, 'That option is currently out of stock.');
+            }
+
+            $cart->addVariant($variant->id, $quantity);
+            $label = $variant->displayName($product);
+        } else {
+            if (! $product->isInStock()) {
+                return $this->fail($request, 'That item is currently out of stock.');
+            }
+
+            $cart->addAccessory($product->id, $quantity);
+            $label = $product->name;
+        }
 
         if ($request->wantsJson()) {
             return response()->json([
                 'ok' => true,
-                'message' => $product->name . ' added to your bag.',
+                'message' => $label.' added to your bag.',
                 'cart' => $cart->clientPayload(),
             ]);
         }
 
         return redirect()
             ->route('shop.cart')
-            ->with('success', $product->name . ' added to your bag.');
+            ->with('success', $label.' added to your bag.');
     }
 
-    public function update(Request $request, ShopCart $cart, int $accessory): RedirectResponse|\Illuminate\Http\JsonResponse
+    public function update(Request $request, ShopCart $cart, string $line): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $validated = $request->validate([
             'quantity' => ['required', 'integer', 'min:0', 'max:20'],
         ]);
 
-        $cart->update($accessory, (int) $validated['quantity']);
+        $cart->update($line, (int) $validated['quantity']);
 
         if ($request->wantsJson()) {
             $payload = $cart->clientPayload();
-            $line = collect($payload['lines'])->firstWhere('id', $accessory);
+            $key = str_replace('-', ':', $line);
+            $matched = collect($payload['lines'])->firstWhere('id', $key);
 
             return response()->json([
                 'ok' => true,
-                'removed' => $line === null,
-                'quantity' => $line['quantity'] ?? 0,
-                'line_total' => $line['line_total'] ?? 0,
-                'line_total_formatted' => '£' . number_format((float) ($line['line_total'] ?? 0), 2),
+                'removed' => $matched === null,
+                'quantity' => $matched['quantity'] ?? 0,
+                'line_total' => $matched['line_total'] ?? 0,
+                'line_total_formatted' => '£'.number_format((float) ($matched['line_total'] ?? 0), 2),
                 'totals' => $payload['totals'],
                 'empty' => $payload['empty'],
                 'cart' => $payload,
@@ -79,9 +107,9 @@ class ShopCartController extends Controller
         return redirect()->route('shop.cart')->with('success', 'Bag updated.');
     }
 
-    public function remove(Request $request, ShopCart $cart, int $accessory): RedirectResponse|\Illuminate\Http\JsonResponse
+    public function remove(Request $request, ShopCart $cart, string $line): RedirectResponse|\Illuminate\Http\JsonResponse
     {
-        $cart->remove($accessory);
+        $cart->remove($line);
 
         if ($request->wantsJson()) {
             $payload = $cart->clientPayload();
@@ -96,5 +124,14 @@ class ShopCartController extends Controller
         }
 
         return redirect()->route('shop.cart')->with('success', 'Item removed.');
+    }
+
+    private function fail(Request $request, string $message): RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => false, 'message' => $message], 422);
+        }
+
+        return back()->with('error', $message);
     }
 }

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Repair bookings — ' . $siteSettings->displayName())
+@section('title', 'Repair bookings - ' . $siteSettings->displayName())
 
 @section('meta_robots', 'noindex, nofollow')
 

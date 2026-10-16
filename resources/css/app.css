@@ -398,6 +398,37 @@
         @apply my-6 rounded-xl;
     }
 
+    /* Horizontal how-it-works steps with dotted path */
+    .how-steps {
+        position: relative;
+    }
+
+    @media (min-width: 1024px) {
+        .how-steps::before {
+            content: '';
+            position: absolute;
+            top: 1.5rem;
+            left: calc(12.5% + 1.5rem);
+            right: calc(12.5% + 1.5rem);
+            border-top: 2px dotted color-mix(in oklab, var(--color-accent) 55%, #cbd5e1);
+            z-index: 0;
+            pointer-events: none;
+        }
+    }
+
+    @media (min-width: 640px) and (max-width: 1023px) {
+        .how-step:nth-child(odd)::after {
+            content: '';
+            position: absolute;
+            top: 1.5rem;
+            left: calc(50% + 1.75rem);
+            width: calc(100% - 3.5rem);
+            border-top: 2px dotted color-mix(in oklab, var(--color-accent) 55%, #cbd5e1);
+            z-index: 0;
+            pointer-events: none;
+        }
+    }
+
     /* Skeleton loading UI */
     .skeleton {
         position: relative;
@@ -472,6 +503,24 @@
         .skeleton::after {
             animation: none;
         }
+    }
+
+    /* Shop PDP — Back Market–style buy box */
+    .pdp-gallery {
+        box-shadow: inset 0 0 0 1px rgba(15, 23, 32, 0.04);
+    }
+
+    .pdp-option-card:focus-visible,
+    .pdp-chip:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+    }
+
+    .line-clamp-4 {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4;
+        overflow: hidden;
     }
 
 }

@@ -31,4 +31,13 @@ class Category extends Model
     {
         return $this->hasMany(Device::class)->orderBy('sort_order');
     }
+
+    public function imageUrl(): ?string
+    {
+        if (! filled($this->image_path)) {
+            return null;
+        }
+
+        return '/storage/'.ltrim(str_replace('\\', '/', (string) $this->image_path), '/');
+    }
 }

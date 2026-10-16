@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Shop checkout — ' . $siteSettings->displayName())
+@section('title', 'Shop checkout - ' . $siteSettings->displayName())
 
 @section('meta_description', 'Complete your accessory order securely at ' . $siteSettings->displayName() . '.')
 
@@ -77,12 +77,12 @@
                                 <label class="cursor-pointer rounded-xl border-2 border-mist p-4 has-[:checked]:border-accent has-[:checked]:bg-accent/5">
                                     <input type="radio" name="fulfilment" value="collection" class="sr-only" {{ old('fulfilment', 'collection') === 'collection' ? 'checked' : '' }} data-fulfilment @change="syncTotals()">
                                     <p class="font-semibold text-ink">Collection</p>
-                                    <p class="mt-1 text-sm text-steel">Pick up in store — free.</p>
+                                    <p class="mt-1 text-sm text-steel">Pick up in store - free.</p>
                                 </label>
                                 <label class="cursor-pointer rounded-xl border-2 border-mist p-4 has-[:checked]:border-accent has-[:checked]:bg-accent/5">
                                     <input type="radio" name="fulfilment" value="delivery" class="sr-only" {{ old('fulfilment') === 'delivery' ? 'checked' : '' }} data-fulfilment @change="syncTotals()">
                                     <p class="font-semibold text-ink">UK delivery</p>
-                                    <p class="mt-1 text-sm text-steel">Tracked post — £3.99.</p>
+                                    <p class="mt-1 text-sm text-steel">Tracked post - £3.99.</p>
                                 </label>
                             </div>
 
@@ -146,7 +146,12 @@
                             <ul class="mt-4 space-y-3 text-sm">
                                 @foreach ($lines as $line)
                                     <li class="flex justify-between gap-3 text-steel">
-                                        <span>{{ $line['product']->name }} × {{ $line['quantity'] }}</span>
+                                        <span>
+                                            {{ $line['name'] }} × {{ $line['quantity'] }}
+                                            @if ($line['options_label'])
+                                                <span class="block text-xs text-steel">{{ $line['options_label'] }}</span>
+                                            @endif
+                                        </span>
                                         <span class="font-semibold text-ink">£{{ number_format($line['line_total'], 2) }}</span>
                                     </li>
                                 @endforeach

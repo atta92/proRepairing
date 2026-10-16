@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Checkout — ' . $siteSettings->displayName())
+@section('title', 'Checkout - ' . $siteSettings->displayName())
 
 @section('meta_description', 'Complete your repair booking checkout at ' . $siteSettings->displayName() . '.')
 
@@ -49,23 +49,13 @@
                     </div>
 
                     <div class="rounded-2xl border border-mist bg-white p-5 sm:p-6">
-                        <h2 class="font-display text-xl font-semibold text-ink">How we’ll repair it</h2>
-                        <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                            <label class="cursor-pointer rounded-xl border-2 border-mist p-4 has-[:checked]:border-accent has-[:checked]:bg-accent/5">
-                                <input type="radio" name="fulfilment" value="walk_in" class="sr-only" {{ old('fulfilment', 'walk_in') === 'walk_in' ? 'checked' : '' }}>
-                                <p class="font-semibold text-ink">Walk-in</p>
-                                <p class="mt-1 text-sm text-steel">Bring it to the store. Most jobs same day.</p>
-                            </label>
-                            <label class="cursor-pointer rounded-xl border-2 border-mist p-4 has-[:checked]:border-accent has-[:checked]:bg-accent/5">
-                                <input type="radio" name="fulfilment" value="mail_in" class="sr-only" {{ old('fulfilment') === 'mail_in' ? 'checked' : '' }}>
-                                <p class="font-semibold text-ink">Mail-in</p>
-                                <p class="mt-1 text-sm text-steel">Post it free. Tracked return included.</p>
-                            </label>
-                        </div>
+                        <h2 class="font-display text-xl font-semibold text-ink">Mail-in booking</h2>
+                        <p class="mt-1 text-sm text-steel">Post it free. We’ll email a tracked return label after booking.</p>
+                        <input type="hidden" name="fulfilment" value="mail_in">
 
                         <div class="mt-4 grid gap-4 sm:grid-cols-2">
                             <label class="block">
-                                <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Date</span>
+                                <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Preferred date</span>
                                 <input type="date" name="scheduled_date" value="{{ old('scheduled_date', now()->addDay()->toDateString()) }}" required min="{{ now()->toDateString() }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                             </label>
                             <label class="block">
@@ -79,22 +69,22 @@
                             </label>
                         </div>
 
-                        <div id="mail-fields" class="mt-4 grid gap-4 sm:grid-cols-2 {{ old('fulfilment') === 'mail_in' ? '' : 'hidden' }}">
+                        <div class="mt-4 grid gap-4 sm:grid-cols-2">
                             <label class="block sm:col-span-2">
                                 <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Address line 1</span>
-                                <input type="text" name="address_line_1" value="{{ old('address_line_1', $customer?->address_line_1) }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                <input type="text" name="address_line_1" value="{{ old('address_line_1', $customer?->address_line_1) }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                             </label>
                             <label class="block sm:col-span-2">
                                 <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Address line 2</span>
-                                <input type="text" name="address_line_2" value="{{ old('address_line_2') }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                <input type="text" name="address_line_2" value="{{ old('address_line_2', $customer?->address_line_2) }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                             </label>
                             <label class="block">
                                 <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">City</span>
-                                <input type="text" name="city" value="{{ old('city', $customer?->city) }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                <input type="text" name="city" value="{{ old('city', $customer?->city) }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                             </label>
                             <label class="block">
                                 <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Postcode</span>
-                                <input type="text" name="postcode" value="{{ old('postcode', $customer?->postcode) }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                <input type="text" name="postcode" value="{{ old('postcode', $customer?->postcode) }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                             </label>
                         </div>
 
@@ -127,8 +117,8 @@
                             </label>
                             <label class="cursor-pointer rounded-xl border-2 border-mist p-4 has-[:checked]:border-accent has-[:checked]:bg-accent/5">
                                 <input type="radio" name="payment_method" value="store" class="sr-only" {{ old('payment_method', ! empty($stripeConfigured) ? 'card' : 'store') === 'store' ? 'checked' : '' }}>
-                                <p class="font-semibold text-ink">Pay at store / on completion</p>
-                                <p class="mt-1 text-sm text-steel">Pay by card or cash when the repair is done.</p>
+                                <p class="font-semibold text-ink">Pay on completion</p>
+                                <p class="mt-1 text-sm text-steel">Pay by card when we return your repaired device.</p>
                             </label>
                         </div>
                     </div>
@@ -142,7 +132,10 @@
                         <ul class="mt-5 space-y-3 border-b border-mist pb-5">
                             @foreach ($items as $item)
                                 <li class="flex items-start justify-between gap-3 text-sm">
-                                    <span class="text-ink">{{ $item->repair->name }}</span>
+                                    <span class="text-ink">
+                                        <span aria-hidden="true">{{ $item->repair->emoji() }}</span>
+                                        {{ $item->repair->name }}
+                                    </span>
                                     <span class="font-semibold text-ink">£{{ number_format((float) $item->price, 0) }}</span>
                                 </li>
                             @endforeach
@@ -153,12 +146,6 @@
                                 <dt class="text-steel">Subtotal</dt>
                                 <dd class="font-medium text-ink">£{{ number_format($totals['subtotal'], 2) }}</dd>
                             </div>
-                            @if ($totals['discount_amount'] > 0)
-                                <div class="flex justify-between text-accent">
-                                    <dt>Multi-repair discount ({{ $totals['discount_percent'] }}%)</dt>
-                                    <dd>-£{{ number_format($totals['discount_amount'], 2) }}</dd>
-                                </div>
-                            @endif
                             <div class="flex justify-between border-t border-mist pt-3 text-base">
                                 <dt class="font-semibold text-ink">Total</dt>
                                 <dd class="font-display text-xl font-bold text-accent">£{{ number_format($totals['total'], 2) }}</dd>
@@ -177,20 +164,3 @@
         </div>
     </section>
 @endsection
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const mailFields = document.getElementById('mail-fields');
-    const radios = document.querySelectorAll('input[name="fulfilment"]');
-
-    const sync = () => {
-        const selected = document.querySelector('input[name="fulfilment"]:checked')?.value;
-        mailFields?.classList.toggle('hidden', selected !== 'mail_in');
-    };
-
-    radios.forEach((radio) => radio.addEventListener('change', sync));
-    sync();
-});
-</script>
-@endpush

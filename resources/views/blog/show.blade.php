@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $post->title . ' — ' . $siteSettings->displayName())
+@section('title', $post->title . ' - ' . $siteSettings->displayName())
 
 @section('meta_description', $post->excerpt ?: Str::limit(strip_tags($post->body), 155))
 

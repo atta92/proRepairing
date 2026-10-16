@@ -12,7 +12,7 @@ Thanks {{ $order->customer?->name }}. We’ve received your payment for booking 
 
 <x-mail::panel>
 @foreach ($order->items as $item)
-{{ $item->name }} — £{{ number_format((float) $item->price, 2) }}  
+{{ $item->name }} - £{{ number_format((float) $item->price, 2) }}  
 @endforeach
 </x-mail::panel>
 

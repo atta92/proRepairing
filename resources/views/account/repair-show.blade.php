@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Booking ' . $order->reference . ' — ' . $siteSettings->displayName())
+@section('title', 'Booking ' . $order->reference . ' - ' . $siteSettings->displayName())
 
 @section('meta_robots', 'noindex, nofollow')
 

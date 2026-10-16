@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PageController;
@@ -27,6 +28,7 @@ Route::get('/robots.txt', RobotsController::class)->name('robots');
 
 Route::get('/about', [PageController::class, 'about'])->name('pages.about');
 Route::get('/contact', [PageController::class, 'contact'])->name('pages.contact');
+Route::post('/contact', [ContactController::class, 'store'])->name('pages.contact.store');
 Route::get('/privacy', [PageController::class, 'privacy'])->name('pages.privacy');
 Route::get('/terms', [PageController::class, 'terms'])->name('pages.terms');
 
@@ -38,8 +40,8 @@ Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 // Guest-friendly cart & checkout (account optional).
 Route::get('/shop/cart', [ShopCartController::class, 'show'])->name('shop.cart');
 Route::post('/shop/cart/add', [ShopCartController::class, 'add'])->name('shop.cart.add');
-Route::patch('/shop/cart/{accessory}', [ShopCartController::class, 'update'])->name('shop.cart.update');
-Route::delete('/shop/cart/{accessory}', [ShopCartController::class, 'remove'])->name('shop.cart.remove');
+Route::patch('/shop/cart/{line}', [ShopCartController::class, 'update'])->where('line', '[av]-\d+')->name('shop.cart.update');
+Route::delete('/shop/cart/{line}', [ShopCartController::class, 'remove'])->where('line', '[av]-\d+')->name('shop.cart.remove');
 Route::get('/shop/checkout', [ShopCheckoutController::class, 'show'])->name('shop.checkout');
 Route::post('/shop/checkout', [ShopCheckoutController::class, 'store'])->name('shop.checkout.store');
 Route::post('/shop/checkout/coupon', [ShopCheckoutController::class, 'applyCoupon'])->name('shop.checkout.coupon.apply');
@@ -49,6 +51,7 @@ Route::get('/shop/checkout/stripe/success/{shopOrder}', [ShopCheckoutController:
 Route::get('/shop/checkout/stripe/cancel/{shopOrder}', [ShopCheckoutController::class, 'stripeCancel'])->name('shop.checkout.stripe.cancel');
 
 Route::get('/shop/{accessory:slug}', [ShopController::class, 'show'])->name('shop.show');
+Route::post('/shop/{accessory:slug}/reviews', [ShopController::class, 'storeReview'])->name('shop.reviews.store');
 
 Route::redirect('/accessories', '/shop');
 Route::get('/accessories/{slug}', function (string $slug) {

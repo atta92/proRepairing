@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Booking confirmed — ' . $siteSettings->displayName())
+@section('title', 'Booking confirmed - ' . $siteSettings->displayName())
 
 @section('meta_description', 'Your repair booking is confirmed. We will be in touch from ' . $siteSettings->displayName() . '.')
 
@@ -26,7 +26,7 @@
                     </div>
                     <div class="flex justify-between gap-4">
                         <dt class="text-steel">Fulfilment</dt>
-                        <dd class="font-medium text-ink">{{ $order->fulfilment === 'mail_in' ? 'Mail-in' : 'Walk-in' }}</dd>
+                        <dd class="font-medium text-ink">Mail-in</dd>
                     </div>
                     <div class="flex justify-between gap-4">
                         <dt class="text-steel">Scheduled</dt>

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Order ' . $order->reference . ' — ' . $siteSettings->displayName())
+@section('title', 'Order ' . $order->reference . ' - ' . $siteSettings->displayName())
 
 @section('meta_robots', 'noindex, nofollow')
 
@@ -22,7 +22,12 @@
                 <ul class="mt-4 divide-y divide-mist">
                     @foreach ($order->items as $item)
                         <li class="flex justify-between gap-3 py-3 text-sm">
-                            <span class="text-ink">{{ $item->name }} × {{ $item->quantity }}</span>
+                            <span class="text-ink">
+                                {{ $item->name }} × {{ $item->quantity }}
+                                @if ($item->options_label)
+                                    <span class="mt-0.5 block text-xs text-steel">{{ $item->options_label }}</span>
+                                @endif
+                            </span>
                             <span class="font-medium text-ink">£{{ number_format((float) $item->price * $item->quantity, 2) }}</span>
                         </li>
                     @endforeach

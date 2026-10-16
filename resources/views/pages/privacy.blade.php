@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', ($settings->privacy_title ?: 'Privacy policy') . ' — ' . $siteSettings->displayName())
+@section('title', ($settings->privacy_title ?: 'Privacy policy') . ' - ' . $siteSettings->displayName())
 
 @section('meta_description', Str::limit(strip_tags($settings->privacy_body ?? ''), 155))
 

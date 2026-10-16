@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $siteSettings->displayName() . ' — Phone, Tablet & Laptop Repairs')
+@section('title', $siteSettings->displayName() . ' - Phone, Tablet & Laptop Repairs')
 
 @section('meta_description', $siteSettings->site_description ?: ('Cracked screen, worn battery or charging fault? ' . $siteSettings->displayName() . ' fixes phones, tablets and laptops in-house with published prices and a 12-month warranty.'))
 
@@ -16,7 +16,7 @@
         </div>
 
         <div x-show="ready" x-cloak>
-    {{-- Hero — emojis --}}
+    {{-- Hero - emojis --}}
     <section class="{{ $homeBg++ % 2 === 0 ? 'site-emoji-bg' : 'site-grid-bg' }} relative overflow-hidden bg-ink text-white">
         <div class="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
             <div class="absolute -left-24 top-10 h-72 w-72 rounded-full bg-accent/20 blur-3xl"></div>
@@ -32,7 +32,7 @@
                 Professional Phone Repair Specialists Across the UK
                 </h1>
                 <p class="mt-4 max-w-xl text-lg text-white/75">
-                    Cracked screen, worn battery, charging fault or water damage — we fix phones, tablets and laptops in-house. Walk in, or post it free from anywhere in the UK.
+                    Cracked screen, worn battery, charging fault or water damage - we fix phones, tablets and laptops in-house. Post it free from anywhere in the UK.
                 </p>
 
                 <ul class="mt-8 flex flex-wrap gap-2">
@@ -115,7 +115,7 @@
     </section>
 
 
-    {{-- Devices from categories — lines --}}
+    {{-- Devices from categories - lines --}}
     <section id="devices" class="{{ $homeBg++ % 2 === 0 ? 'site-emoji-bg' : 'site-grid-bg-soft' }} scroll-mt-24 bg-white py-16 sm:py-20">
         <div class="site-container">
             <div class="max-w-2xl">
@@ -123,7 +123,7 @@
                     Repairs by device
                 </h2>
                 <p class="mt-3 text-base text-steel">
-                    {{ $stats['categories'] }} categories · {{ $stats['devices'] }} models — diagnosed and repaired in house.
+                    {{ $stats['categories'] }} categories · {{ $stats['devices'] }} models - diagnosed and repaired in house.
                 </p>
             </div>
 
@@ -131,18 +131,34 @@
                 @forelse ($categories as $category)
                     <a
                         href="{{ route('categories.show', $category->slug) }}"
-                        class="group rounded-2xl border border-mist bg-snow p-4 transition hover:border-accent/40 hover:bg-white hover:shadow-md sm:p-5"
+                        class="group flex h-full flex-col overflow-hidden rounded-2xl border border-mist bg-snow transition hover:border-accent/40 hover:bg-white hover:shadow-md"
                     >
-                        <p class="font-display text-base font-semibold text-ink group-hover:text-accent-dark sm:text-lg">
-                            {{ $category->name }}
-                        </p>
-                        <p class="mt-1 text-xs text-steel sm:text-sm">
-                            {{ $category->excerpt ?: ucfirst($category->type) . ' repairs' }}
-                        </p>
-                        <p class="mt-3 text-xs font-medium uppercase tracking-wide text-steel/70">
-                            {{ $category->devices_count }} {{ Str::plural('model', $category->devices_count) }}
-                        </p>
-                        <p class="mt-2 text-sm font-semibold text-accent">View models →</p>
+                        @if ($category->imageUrl())
+                            <div class="aspect-[4/3] overflow-hidden bg-mist">
+                                <img
+                                    src="{{ $category->imageUrl() }}"
+                                    alt=""
+                                    class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                                    loading="lazy"
+                                >
+                            </div>
+                        @else
+                            <div class="flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-accent/10 to-ink/5">
+                                <i class="bi bi-phone text-3xl text-accent/70" aria-hidden="true"></i>
+                            </div>
+                        @endif
+                        <div class="flex flex-1 flex-col p-4 sm:p-5">
+                            <p class="font-display text-base font-semibold text-ink group-hover:text-accent-dark sm:text-lg">
+                                {{ $category->name }}
+                            </p>
+                            <p class="mt-1 text-xs text-steel sm:text-sm">
+                                {{ $category->excerpt ?: ucfirst($category->type) . ' repairs' }}
+                            </p>
+                            <p class="mt-3 text-xs font-medium uppercase tracking-wide text-steel/70">
+                                {{ $category->devices_count }} {{ Str::plural('model', $category->devices_count) }}
+                            </p>
+                            <p class="mt-2 text-sm font-semibold text-accent">View models →</p>
+                        </div>
                     </a>
                 @empty
                     <p class="col-span-2 text-steel">No active categories yet. Add them in the admin panel.</p>
@@ -161,7 +177,7 @@
                             Shop
                         </h2>
                         <p class="mt-3 text-base text-steel">
-                            Mobiles, accessories, tablets and more — buy online for collection or delivery.
+                            Mobiles, accessories, tablets and more - buy online for collection or delivery.
                         </p>
                     </div>
                     <a href="{{ route('shop.index') }}" class="text-sm font-semibold text-accent hover:text-accent-dark">
@@ -181,56 +197,32 @@
     {{-- How it works --}}
     <section id="how-it-works" class="{{ $homeBg++ % 2 === 0 ? 'site-emoji-bg' : 'site-grid-bg-soft' }} scroll-mt-24 bg-snow py-16 sm:py-20">
         <div class="site-container">
-            <div class="max-w-2xl">
-                <h2 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+            <div class="mx-auto max-w-2xl text-center">
+                <p class="text-sm font-semibold uppercase tracking-wider text-accent">Free mail-in</p>
+                <h2 class="mt-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
                     How your repair works
                 </h2>
                 <p class="mt-3 text-base text-steel">
-                    Walk into our store, or post your device free from anywhere in the UK. Same technicians, same warranty, same fixed price.
+                    Post your device free from anywhere in the UK. Same technicians, same warranty, same fixed price.
                 </p>
             </div>
 
-            <div class="mt-10 grid gap-6 lg:grid-cols-2">
-                <div class="rounded-2xl border border-mist bg-white p-6 sm:p-8">
-                    <p class="text-sm font-semibold uppercase tracking-wider text-accent">Free mail-in</p>
-                    <ol class="mt-6 space-y-5">
-                        @foreach ([
-                            ['step' => '1', 'title' => 'Book online', 'text' => 'Pick your device and fault for a fixed price.'],
-                            ['step' => '2', 'title' => 'Post it to us', 'text' => 'Your booking email tells you exactly where to send it.'],
-                            ['step' => '3', 'title' => 'We diagnose & repair', 'text' => 'Most devices are fixed the same day they arrive.'],
-                            ['step' => '4', 'title' => 'Free return delivery', 'text' => 'Tested, cleaned and posted back with warranty.'],
-                        ] as $item)
-                            <li class="flex gap-4">
-                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-white">{{ $item['step'] }}</span>
-                                <div>
-                                    <p class="font-semibold text-ink">{{ $item['title'] }}</p>
-                                    <p class="mt-0.5 text-sm text-steel">{{ $item['text'] }}</p>
-                                </div>
-                            </li>
-                        @endforeach
-                    </ol>
-                </div>
-
-                <div class="rounded-2xl border border-mist bg-white p-6 sm:p-8">
-                    <p class="text-sm font-semibold uppercase tracking-wider text-signal">Walk-in</p>
-                    <ol class="mt-6 space-y-5">
-                        @foreach ([
-                            ['step' => '1', 'title' => 'Pop in — no appointment', 'text' => 'Open Monday to Sunday. Walk-ins always welcome.'],
-                            ['step' => '2', 'title' => 'Free diagnostic & quote', 'text' => 'We test in front of you and agree a fixed price first.'],
-                            ['step' => '3', 'title' => 'Wait while we fix it', 'text' => 'Most screens and batteries done in 30–120 minutes.'],
-                            ['step' => '4', 'title' => 'Test, pay & go', 'text' => 'Check everything works. Warranty starts as you leave.'],
-                        ] as $item)
-                            <li class="flex gap-4">
-                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-signal text-sm font-bold text-white">{{ $item['step'] }}</span>
-                                <div>
-                                    <p class="font-semibold text-ink">{{ $item['title'] }}</p>
-                                    <p class="mt-0.5 text-sm text-steel">{{ $item['text'] }}</p>
-                                </div>
-                            </li>
-                        @endforeach
-                    </ol>
-                </div>
-            </div>
+            <ol class="how-steps mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
+                @foreach ([
+                    ['step' => '1', 'title' => 'Book online', 'text' => 'Pick your device and fault for a fixed price.'],
+                    ['step' => '2', 'title' => 'Post it free', 'text' => 'We email a tracked label - pack and drop at any Post Office.'],
+                    ['step' => '3', 'title' => 'We diagnose & repair', 'text' => 'In-house technicians fix it with genuine or certified parts.'],
+                    ['step' => '4', 'title' => 'Tracked return', 'text' => 'We post it back with warranty. Most jobs turn around fast.'],
+                ] as $item)
+                    <li class="how-step relative text-center">
+                        <span class="relative z-10 mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent text-base font-bold text-white shadow-md shadow-accent/25">
+                            {{ $item['step'] }}
+                        </span>
+                        <p class="mt-4 font-display text-lg font-semibold text-ink">{{ $item['title'] }}</p>
+                        <p class="mt-1.5 text-sm leading-relaxed text-steel">{{ $item['text'] }}</p>
+                    </li>
+                @endforeach
+            </ol>
         </div>
     </section>
 
@@ -298,7 +290,7 @@
                             Before &amp; after
                         </h2>
                         <p class="mt-3 text-base text-steel">
-                            Real repairs from our workshop — see the difference side by side.
+                            Real repairs from our workshop - see the difference side by side.
                         </p>
                     </div>
 
@@ -336,8 +328,8 @@
                                 <div class="grid w-full shrink-0 grow-0 basis-full grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">
                                     @foreach ($pageItems as $item)
                                         @php
-                                            $beforeAlt = filled($item->title) ? $item->title.' — before' : 'Repair before';
-                                            $afterAlt = filled($item->title) ? $item->title.' — after' : 'Repair after';
+                                            $beforeAlt = filled($item->title) ? $item->title.' - before' : 'Repair before';
+                                            $afterAlt = filled($item->title) ? $item->title.' - after' : 'Repair after';
                                         @endphp
                                         <article class="min-w-0 overflow-hidden rounded-2xl border border-mist bg-white shadow-md shadow-ink/5">
                                             <div class="grid grid-cols-2 divide-x divide-mist">

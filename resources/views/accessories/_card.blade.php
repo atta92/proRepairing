@@ -23,6 +23,10 @@
         <h3 class="mt-1.5 font-display text-sm font-semibold leading-snug text-ink group-hover:text-accent-dark sm:mt-2 sm:text-lg">
             {{ $accessory->name }}
         </h3>
+        @include('partials.product-rating', [
+            'product' => $accessory,
+            'class' => 'mt-1.5',
+        ])
         @if ($accessory->excerpt)
             <p class="mt-2 hidden flex-1 text-sm leading-relaxed text-steel sm:block">
                 {{ Str::limit($accessory->excerpt, 90) }}

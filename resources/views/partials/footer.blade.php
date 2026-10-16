@@ -1,7 +1,7 @@
 @php
     $siteName = ($siteSettings ?? null)?->displayName() ?: config('app.name');
     $siteDescription = ($siteSettings ?? null)?->site_description
-        ?: 'Top-rated same-day repair services for phones, tablets and laptops — walk in or mail in from anywhere in the UK.';
+        ?: 'Top-rated same-day repair services for phones, tablets and laptops - free mail-in from anywhere in the UK.';
 @endphp
 
 <footer class="site-grid-bg bg-ink text-white">

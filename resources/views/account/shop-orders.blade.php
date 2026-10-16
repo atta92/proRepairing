@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Shop orders — ' . $siteSettings->displayName())
+@section('title', 'Shop orders - ' . $siteSettings->displayName())
 
 @section('meta_robots', 'noindex, nofollow')
 

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Shop — ' . $siteSettings->displayName())
+@section('title', 'Shop - ' . $siteSettings->displayName())
 
 @section('meta_description', 'Shop mobiles, accessories, tablets and more from ' . $siteSettings->displayName() . '.')
 

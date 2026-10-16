@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Accessories — ' . $siteSettings->displayName())
+@section('title', 'Accessories - ' . $siteSettings->displayName())
 
 @section('meta_description', 'Cases, chargers, cables, screen protectors and more from ' . $siteSettings->displayName() . '.')
 
@@ -12,7 +12,7 @@
                 Accessories
             </h1>
             <p class="mt-3 max-w-2xl text-base text-white/70">
-                Cases, chargers, cables and screen protectors — pick up in store or add to a mail-in repair.
+                Cases, chargers, cables and screen protectors - pick up in store.
             </p>
         </div>
     </section>

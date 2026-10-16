@@ -69,6 +69,7 @@
                         </a>
                         <div class="min-w-0 flex-1">
                             <a :href="line.url" class="block truncate text-sm font-semibold text-ink hover:text-accent" x-text="line.name" @click="$store.bag.close()"></a>
+                            <p class="mt-0.5 truncate text-xs text-steel" x-show="line.options" x-text="line.options"></p>
                             <p class="mt-0.5 text-xs text-steel" x-text="line.price_formatted"></p>
                             <div class="mt-2 flex items-center gap-2">
                                 <div class="inline-flex items-center overflow-hidden rounded-md border border-mist">

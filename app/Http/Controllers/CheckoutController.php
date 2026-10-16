@@ -45,24 +45,16 @@ class CheckoutController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:50'],
-            'address_line_1' => ['nullable', 'string', 'max:255'],
+            'address_line_1' => ['required', 'string', 'max:255'],
             'address_line_2' => ['nullable', 'string', 'max:255'],
-            'city' => ['nullable', 'string', 'max:100'],
-            'postcode' => ['nullable', 'string', 'max:20'],
-            'fulfilment' => ['required', 'in:walk_in,mail_in'],
+            'city' => ['required', 'string', 'max:100'],
+            'postcode' => ['required', 'string', 'max:20'],
+            'fulfilment' => ['required', 'in:mail_in'],
             'scheduled_date' => ['required', 'date', 'after_or_equal:today'],
             'scheduled_time' => ['nullable', 'string', 'max:20'],
             'payment_method' => ['required', 'in:card,store'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
-
-        if ($validated['fulfilment'] === 'mail_in') {
-            $request->validate([
-                'address_line_1' => ['required', 'string', 'max:255'],
-                'city' => ['required', 'string', 'max:100'],
-                'postcode' => ['required', 'string', 'max:20'],
-            ]);
-        }
 
         if ($validated['payment_method'] === 'card' && ! $stripe->isConfigured()) {
             return back()

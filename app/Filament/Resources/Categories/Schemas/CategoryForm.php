@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Categories\Schemas;
 
+use App\Support\FilamentImageUpload;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -42,10 +43,11 @@ class CategoryForm
                     ->rows(4)
                     ->columnSpanFull()
                     ->helperText('Shown at the top of the category page.'),
-                FileUpload::make('image_path')
-                    ->image()
-                    ->directory('categories')
-                    ->disk('public'),
+                FilamentImageUpload::catalogue(
+                    FileUpload::make('image_path')
+                        ->label('Image')
+                        ->directory('categories')
+                ),
                 TextInput::make('sort_order')
                     ->numeric()
                     ->default(0)

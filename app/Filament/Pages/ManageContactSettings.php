@@ -101,7 +101,7 @@ class ManageContactSettings extends Page
                         TextInput::make('contact_hours')
                             ->label('Opening hours')
                             ->maxLength(255)
-                            ->placeholder('Mon–Sun · Walk-ins welcome'),
+                            ->placeholder('Mon–Sun · Free UK mail-in'),
                         TextInput::make('contact_address')
                             ->label('Address')
                             ->maxLength(255),

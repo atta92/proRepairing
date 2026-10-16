@@ -22,6 +22,9 @@ class HomeController extends Controller
 
         $accessories = Accessory::query()
             ->active()
+            ->with('activeVariants')
+            ->withCount('approvedReviews')
+            ->withAvg('approvedReviews', 'rating')
             ->orderByDesc('is_featured')
             ->orderBy('sort_order')
             ->limit(4)

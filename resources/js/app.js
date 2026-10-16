@@ -214,6 +214,312 @@ document.addEventListener('alpine:init', () => {
     });
 });
 
+window.productReviews = function productReviews(config) {
+    const labels = {
+        1: 'Poor',
+        2: 'Fair',
+        3: 'Good',
+        4: 'Very good',
+        5: 'Excellent',
+    };
+
+    return {
+        reviews: Array.isArray(config.reviews) ? config.reviews : [],
+        average: config.average,
+        count: Number(config.count || 0),
+        breakdown: config.breakdown || {},
+        filter: 'all',
+        sort: 'newest',
+        showAll: false,
+        pageSize: 4,
+        formOpen: Boolean(config.formOpen),
+        rating: Number(config.oldRating || 5),
+        hoverRating: 0,
+        body: config.oldBody || '',
+        expanded: {},
+        photoPreview: null,
+        photoName: '',
+        photoInput: null,
+
+        get ratingLabel() {
+            return labels[this.rating] || '';
+        },
+
+        get filtered() {
+            let list = [...this.reviews];
+
+            if (this.filter !== 'all') {
+                list = list.filter((item) => item.rating === Number(this.filter));
+            }
+
+            if (this.sort === 'highest') {
+                list.sort((a, b) => b.rating - a.rating || b.timestamp - a.timestamp);
+            } else if (this.sort === 'lowest') {
+                list.sort((a, b) => a.rating - b.rating || b.timestamp - a.timestamp);
+            } else {
+                list.sort((a, b) => b.timestamp - a.timestamp);
+            }
+
+            return list;
+        },
+
+        get visibleReviews() {
+            return this.showAll ? this.filtered : this.filtered.slice(0, this.pageSize);
+        },
+
+        setFilter(value) {
+            this.filter = value;
+            this.showAll = false;
+        },
+
+        onPhotoChange(event) {
+            const input = event.target;
+            this.photoInput = input;
+            const file = input.files?.[0] || null;
+            this.setPhotoFile(file);
+        },
+
+        onPhotoDrop(event) {
+            const file = event.dataTransfer?.files?.[0] || null;
+            if (!file || !file.type.startsWith('image/')) {
+                return;
+            }
+
+            const input = event.currentTarget.querySelector('input[type="file"]');
+            if (input) {
+                const transfer = new DataTransfer();
+                transfer.items.add(file);
+                input.files = transfer.files;
+                this.photoInput = input;
+            }
+
+            this.setPhotoFile(file);
+        },
+
+        setPhotoFile(file) {
+            if (this.photoPreview) {
+                URL.revokeObjectURL(this.photoPreview);
+            }
+
+            if (!file) {
+                this.photoPreview = null;
+                this.photoName = '';
+                return;
+            }
+
+            this.photoPreview = URL.createObjectURL(file);
+            this.photoName = file.name;
+        },
+
+        clearPhoto() {
+            if (this.photoPreview) {
+                URL.revokeObjectURL(this.photoPreview);
+            }
+
+            this.photoPreview = null;
+            this.photoName = '';
+
+            if (this.photoInput) {
+                this.photoInput.value = '';
+            } else {
+                const input = document.querySelector('#write-review input[type="file"][name="image"]');
+                if (input) {
+                    input.value = '';
+                }
+            }
+        },
+    };
+};
+
+window.productVariants = function productVariants(config) {
+    const variants = Array.isArray(config.variants) ? config.variants : [];
+    const optionKeys = [
+        { key: 'condition', label: 'Select the condition', style: 'cards' },
+        { key: 'storage', label: 'Select the storage', style: 'chips' },
+        { key: 'color', label: 'Select the colour', style: 'chips' },
+        { key: 'unlock_status', label: 'Network', style: 'chips' },
+        { key: 'ram', label: 'Select the RAM', style: 'chips' },
+        { key: 'cpu', label: 'Select the processor', style: 'chips' },
+        { key: 'screen_size', label: 'Select the screen', style: 'chips' },
+    ];
+
+    const money = (value) => {
+        const n = Number(value || 0);
+        return '£' + n.toFixed(n % 1 ? 2 : 0);
+    };
+
+    const optionGroups = optionKeys
+        .map((group) => {
+            const values = [...new Set(variants.map((item) => item[group.key]).filter(Boolean))];
+            return values.length ? { ...group, values } : null;
+        })
+        .filter(Boolean);
+
+    const selected = {};
+    optionGroups.forEach((group) => {
+        const firstAvailable = group.values.find((value) =>
+            variants.some((item) => item[group.key] === value && item.in_stock)
+        );
+        selected[group.key] = firstAvailable || group.values[0] || '';
+    });
+
+    return {
+        variants,
+        optionGroups,
+        selected,
+        quantity: 1,
+        submitting: false,
+        hasVariants: Boolean(config.hasVariants) && variants.length > 0,
+        inStock: Boolean(config.inStock),
+        baseImage: config.baseImage || null,
+        basePrice: Number(config.basePrice || 0),
+        baseCompare: config.baseCompare == null ? null : Number(config.baseCompare),
+        productName: config.productName || '',
+
+        get selectedVariant() {
+            if (!this.hasVariants) {
+                return null;
+            }
+
+            return (
+                this.variants.find((item) =>
+                    this.optionGroups.every((group) => item[group.key] === this.selected[group.key])
+                ) || null
+            );
+        },
+
+        get summaryBits() {
+            return this.optionGroups
+                .map((group) => this.selected[group.key])
+                .filter(Boolean);
+        },
+
+        get allOptionsChosen() {
+            return this.optionGroups.every((group) => Boolean(this.selected[group.key]));
+        },
+
+        get currentImage() {
+            return this.selectedVariant?.image || this.baseImage;
+        },
+
+        get priceValue() {
+            if (this.selectedVariant) {
+                return Number(this.selectedVariant.price);
+            }
+
+            if (this.hasVariants && this.variants.length) {
+                return Math.min(...this.variants.map((item) => Number(item.price)));
+            }
+
+            return this.basePrice;
+        },
+
+        get priceLabel() {
+            if (this.selectedVariant) {
+                return this.selectedVariant.price_formatted;
+            }
+
+            if (this.hasVariants && this.variants.length) {
+                return 'From ' + money(this.priceValue);
+            }
+
+            return money(this.basePrice);
+        },
+
+        get compareLabel() {
+            const compare = this.selectedVariant
+                ? this.selectedVariant.compare_at_price
+                : this.baseCompare;
+
+            if (!compare) {
+                return '';
+            }
+
+            if (Number(compare) <= this.priceValue) {
+                return '';
+            }
+
+            return money(compare);
+        },
+
+        get savingsLabel() {
+            const compare = this.selectedVariant
+                ? this.selectedVariant.compare_at_price
+                : this.baseCompare;
+
+            if (!compare || Number(compare) <= this.priceValue) {
+                return '';
+            }
+
+            const pct = Math.round(((Number(compare) - this.priceValue) / Number(compare)) * 100);
+            return pct > 0 ? pct + '% off' : '';
+        },
+
+        get canAdd() {
+            if (!this.inStock) {
+                return false;
+            }
+
+            if (!this.hasVariants) {
+                return true;
+            }
+
+            return Boolean(this.selectedVariant?.in_stock);
+        },
+
+        matchesExcept(item, exceptKey) {
+            return this.optionGroups.every((group) => {
+                if (group.key === exceptKey) {
+                    return true;
+                }
+
+                const chosen = this.selected[group.key];
+                return !chosen || item[group.key] === chosen;
+            });
+        },
+
+        isOptionAvailable(key, value) {
+            return this.variants.some(
+                (item) => item[key] === value && item.in_stock && this.matchesExcept(item, key)
+            );
+        },
+
+        optionPrice(key, value) {
+            const matches = this.variants.filter(
+                (item) => item[key] === value && this.matchesExcept(item, key)
+            );
+
+            if (!matches.length) {
+                return null;
+            }
+
+            const inStock = matches.filter((item) => item.in_stock);
+            const pool = inStock.length ? inStock : matches;
+            return Math.min(...pool.map((item) => Number(item.price)));
+        },
+
+        optionPriceLabel(key, value) {
+            const price = this.optionPrice(key, value);
+            return price == null ? '' : money(price);
+        },
+
+        selectOption(key, value) {
+            this.selected[key] = value;
+
+            this.optionGroups.forEach((group) => {
+                if (group.key === key) {
+                    return;
+                }
+
+                if (!this.isOptionAvailable(group.key, this.selected[group.key])) {
+                    const next = group.values.find((candidate) => this.isOptionAvailable(group.key, candidate));
+                    this.selected[group.key] = next || group.values[0] || '';
+                }
+            });
+        },
+    };
+};
+
 window.shopCart = function shopCart(config) {
     return {
         csrf: config.csrf,
@@ -755,23 +1061,10 @@ function initPriceChecker() {
         out.textContent = 'Your price and turnaround will appear here.';
     }
 
-    function showOutSkeleton() {
-        out.className = 'pc-out mt-4';
-        out.innerHTML = `
-            <div class="space-y-3 text-left" aria-hidden="true">
-                <div class="skeleton skeleton-line is-sm w-1/3"></div>
-                <div class="skeleton skeleton-line is-lg w-1/2"></div>
-                <div class="skeleton skeleton-line w-2/3"></div>
-                <div class="skeleton skeleton-btn mt-2 w-full"></div>
-            </div>
-            <span class="sr-only">Loading prices…</span>
-        `;
-    }
-
     async function loadBrand(slug) {
         resetSelect(model, 'Loading models…');
         resetSelect(repair, 'Select a model first');
-        showOutSkeleton();
+        blank();
 
         if (!slug) {
             resetSelect(model, 'Select a brand first');
@@ -820,7 +1113,8 @@ function initPriceChecker() {
 
         resetSelect(repair, 'Select your repair…', false);
         selected.r.forEach((item, index) => {
-            repair.add(new Option(item.n, String(index)));
+            const label = item.e ? `${item.e} ${item.n}` : item.n;
+            repair.add(new Option(label, String(index)));
         });
     });
 
@@ -840,6 +1134,9 @@ function initPriceChecker() {
 
         const turnaround = selectedRepair.t || 'Same day';
         const warranty = selectedRepair.w || 12;
+        const repairLabel = selectedRepair.e
+            ? `${selectedRepair.e} ${selectedRepair.n}`
+            : selectedRepair.n;
 
         out.className = 'pc-out is-live mt-4';
         out.innerHTML = `
@@ -849,11 +1146,11 @@ function initPriceChecker() {
                     <span class="font-display text-3xl font-bold text-accent">${selectedRepair.p}</span>
                 </span>
                 <span class="text-right text-sm font-medium text-steel">
-                    ${selectedRepair.n}<br>
+                    ${repairLabel}<br>
                     ${turnaround} · ${warranty}-month warranty
                 </span>
             </div>
-            <a href="${selectedModel.u}" class="btn-primary mt-4 w-full rounded-full">
+            <a href="${selectedModel.u}?repair=${encodeURIComponent(selectedRepair.i)}" class="btn-primary mt-4 w-full rounded-full">
                 See ${selectedModel.m} repair details
             </a>
         `;

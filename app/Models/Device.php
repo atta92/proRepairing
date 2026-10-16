@@ -43,4 +43,13 @@ class Device extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+    public function imageUrl(): ?string
+    {
+        if (! filled($this->image_path)) {
+            return null;
+        }
+
+        return '/storage/'.ltrim(str_replace('\\', '/', (string) $this->image_path), '/');
+    }
 }

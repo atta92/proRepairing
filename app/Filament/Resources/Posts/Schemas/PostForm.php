@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Posts\Schemas;
 
+use App\Support\FilamentImageUpload;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
@@ -33,13 +34,12 @@ class PostForm
                 RichEditor::make('body')
                     ->required()
                     ->columnSpanFull(),
-                FileUpload::make('image_path')
-                    ->label('Cover image')
-                    ->image()
-                    ->directory('posts')
-                    ->disk('public')
-                    ->imageEditor()
-                    ->columnSpanFull(),
+                FilamentImageUpload::landscape(
+                    FileUpload::make('image_path')
+                        ->label('Cover image')
+                        ->directory('posts')
+                        ->columnSpanFull()
+                ),
                 TextInput::make('author_name')
                     ->label('Author')
                     ->default('Repairing Team')

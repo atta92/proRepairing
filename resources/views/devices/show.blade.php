@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $device->name . ' Repair — ' . $siteSettings->displayName())
+@section('title', $device->name . ' Repair - ' . $siteSettings->displayName())
 
 @php
     $devicePageDescription = $device->description ?: $device->content ?: $device->excerpt;
@@ -11,19 +11,32 @@
 @section('content')
     <section class="site-grid-bg bg-ink py-12 text-white sm:py-16">
         <div class="site-container">
-            <p class="text-sm text-white/60">
-                <a href="{{ route('home') }}" class="hover:text-white">Home</a>
-                <span class="mx-2">/</span>
-                <a href="{{ route('categories.show', $device->category->slug) }}" class="hover:text-white">{{ $device->category->name }}</a>
-                <span class="mx-2">/</span>
-                <span class="text-white">{{ $device->name }}</span>
-            </p>
-            <h1 class="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-                {{ $device->name }} Repair
-            </h1>
-            <p class="mt-4 text-sm text-accent-light">
-                What needs fixing? Select one or more repairs — add more and save 20%.
-            </p>
+            <div class="flex flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm text-white/60">
+                        <a href="{{ route('home') }}" class="hover:text-white">Home</a>
+                        <span class="mx-2">/</span>
+                        <a href="{{ route('categories.show', $device->category->slug) }}" class="hover:text-white">{{ $device->category->name }}</a>
+                        <span class="mx-2">/</span>
+                        <span class="text-white">{{ $device->name }}</span>
+                    </p>
+                    <h1 class="mt-4 font-display text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+                        {{ $device->name }} Repair
+                    </h1>
+                    <p class="mt-4 text-sm text-accent-light">
+                        What needs fixing? Select one or more repairs.
+                    </p>
+                </div>
+                @if ($device->imageUrl())
+                    <div class="mx-auto w-36 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white/5 sm:mx-0 sm:w-44">
+                        <img
+                            src="{{ $device->imageUrl() }}"
+                            alt="{{ $device->name }}"
+                            class="aspect-square w-full object-cover"
+                        >
+                    </div>
+                @endif
+            </div>
         </div>
     </section>
 
@@ -61,14 +74,22 @@
                                 value="{{ $sku->id }}"
                                 class="sr-only"
                                 data-price="{{ $sku->price }}"
+                                @checked((int) request('repair') === (int) $sku->id)
                             >
                             <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="font-display text-lg font-semibold text-ink">{{ $sku->repair->name }}</p>
-                                    @if (filled($sku->repair->description))
-                                        <p class="mt-1.5 text-sm leading-relaxed text-steel">{{ $sku->repair->description }}</p>
-                                    @endif
-                                    <p class="mt-2 font-display text-2xl font-bold text-accent">
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-start gap-3">
+                                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-2xl leading-none" aria-hidden="true">
+                                            {{ $sku->repair->emoji() }}
+                                        </span>
+                                        <div class="min-w-0">
+                                            <p class="font-display text-lg font-semibold text-ink">{{ $sku->repair->name }}</p>
+                                            @if (filled($sku->repair->description))
+                                                <p class="mt-1.5 text-sm leading-relaxed text-steel">{{ $sku->repair->description }}</p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <p class="mt-3 font-display text-2xl font-bold text-accent">
                                         £{{ number_format((float) $sku->price, 0) }}
                                     </p>
                                     <p class="mt-2 text-sm text-steel">
@@ -94,7 +115,6 @@
                             <div>
                                 <p class="text-sm text-steel">
                                     <span id="selected-count">0</span> selected
-                                    <span id="discount-note" class="hidden text-accent"> · 20% multi-repair discount</span>
                                 </p>
                                 <p class="font-display text-2xl font-bold text-ink">
                                     Total <span id="selected-total">£0</span>
@@ -114,6 +134,11 @@
                 </div>
             @endif
 
+            @include('partials.quote-cta', [
+                'title' => "Can't see the right repair for {$device->name}?",
+                'text' => 'Unusual fault, water damage, or a repair not listed? Request a free quotation and we’ll confirm a fixed price.',
+            ])
+
             <div class="mt-8">
                 <a href="{{ route('categories.show', $device->category->slug) }}" class="btn-ghost">
                     ← All {{ $device->category->name }} models
@@ -132,18 +157,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const boxes = [...form.querySelectorAll('input[name="device_repair_ids[]"]')];
     const countEl = document.getElementById('selected-count');
     const totalEl = document.getElementById('selected-total');
-    const discountNote = document.getElementById('discount-note');
     const bookBtn = document.getElementById('book-now-btn');
 
     const update = () => {
         const selected = boxes.filter((box) => box.checked);
-        let subtotal = selected.reduce((sum, box) => sum + Number(box.dataset.price || 0), 0);
-        const discount = selected.length >= 2 ? subtotal * 0.2 : 0;
-        const total = Math.round((subtotal - discount) * 100) / 100;
+        const total = selected.reduce((sum, box) => sum + Number(box.dataset.price || 0), 0);
 
         countEl.textContent = String(selected.length);
         totalEl.textContent = '£' + total.toFixed(total % 1 ? 2 : 0);
-        discountNote.classList.toggle('hidden', selected.length < 2);
         if (bookBtn) {
             bookBtn.disabled = selected.length === 0;
         }

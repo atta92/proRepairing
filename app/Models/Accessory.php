@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Accessory extends Model
 {
@@ -27,6 +28,7 @@ class Accessory extends Model
     public const TYPES = [
         'accessories' => 'Accessories',
         'mobiles' => 'Mobiles',
+        'laptops' => 'Laptops',
         'tablets' => 'Tablets',
         'wearables' => 'Wearables',
         'other' => 'Other',
@@ -57,9 +59,64 @@ class Accessory extends Model
         ];
     }
 
+    public function variants(): HasMany
+    {
+        return $this->hasMany(AccessoryVariant::class)->orderBy('sort_order');
+    }
+
+    public function activeVariants(): HasMany
+    {
+        return $this->variants()->active();
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class)->latest();
+    }
+
+    public function approvedReviews(): HasMany
+    {
+        return $this->reviews()->approved();
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    public function averageRating(): ?float
+    {
+        $reviews = $this->relationLoaded('approvedReviews')
+            ? $this->approvedReviews
+            : $this->approvedReviews()->get();
+
+        if ($reviews->isEmpty()) {
+            return null;
+        }
+
+        return round((float) $reviews->avg('rating'), 1);
+    }
+
+    public function reviewsCount(): int
+    {
+        if ($this->relationLoaded('approvedReviews')) {
+            return $this->approvedReviews->count();
+        }
+
+        return $this->approvedReviews()->count();
+    }
+
+    public function hasVariants(): bool
+    {
+        if ($this->relationLoaded('variants')) {
+            return $this->variants->where('is_active', true)->isNotEmpty();
+        }
+
+        if ($this->relationLoaded('activeVariants')) {
+            return $this->activeVariants->isNotEmpty();
+        }
+
+        return $this->activeVariants()->exists();
     }
 
     public function getTypeLabelAttribute(): string
@@ -72,13 +129,45 @@ class Accessory extends Model
         return self::CATEGORIES[$this->category] ?? ucfirst(str_replace('-', ' ', (string) $this->category));
     }
 
+    public function sellingPrice(): float
+    {
+        $variants = $this->relationLoaded('activeVariants')
+            ? $this->activeVariants
+            : ($this->relationLoaded('variants')
+                ? $this->variants->where('is_active', true)
+                : null);
+
+        if ($variants !== null && $variants->isNotEmpty()) {
+            return (float) $variants->min('price');
+        }
+
+        if ($this->hasVariants()) {
+            return (float) $this->activeVariants()->min('price');
+        }
+
+        return (float) $this->price;
+    }
+
     public function getFormattedPriceAttribute(): string
     {
-        return '£' . number_format((float) $this->price, 2);
+        $price = $this->sellingPrice();
+        $prefix = $this->hasVariants() ? 'From ' : '';
+
+        return $prefix.'£'.number_format($price, $price == floor($price) ? 0 : 2);
     }
 
     public function isInStock(): bool
     {
+        if ($this->hasVariants()) {
+            $variants = $this->relationLoaded('activeVariants')
+                ? $this->activeVariants
+                : ($this->relationLoaded('variants')
+                    ? $this->variants->where('is_active', true)
+                    : $this->activeVariants()->get());
+
+            return $variants->contains(fn (AccessoryVariant $variant) => $variant->isInStock());
+        }
+
         return $this->stock === null || $this->stock > 0;
     }
 

@@ -38,11 +38,11 @@ class SiteSetting extends Model
         return once(function (): self {
             $defaults = [
                 'site_name' => config('app.name', 'Repairing'),
-                'site_description' => 'Top-rated same-day repair services for phones, tablets and laptops — walk in or mail in from anywhere in the UK.',
+                'site_description' => 'Top-rated same-day repair services for phones, tablets and laptops - free mail-in from anywhere in the UK.',
                 'contact_email' => 'info@example.com',
                 'contact_phone' => '01234 567890',
-                'contact_hours' => 'Mon–Sun · Walk-ins welcome',
-                'contact_intro' => 'Get in touch for repairs, quotes, or shop orders. Walk-ins welcome.',
+                'contact_hours' => 'Mon-Sun · Free UK mail-in',
+                'contact_intro' => 'Get in touch for repairs, quotes, or shop orders. Free mail-in from anywhere in the UK.',
                 'about_title' => 'About us',
                 'about_body' => '<p>We provide same-day phone, tablet and laptop repairs with published prices and a 12-month warranty.</p>',
                 'privacy_title' => 'Privacy policy',

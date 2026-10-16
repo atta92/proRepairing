@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $accessory->name . ' — ' . $siteSettings->displayName())
+@section('title', $accessory->name . ' - ' . $siteSettings->displayName())
 
 @section('meta_description', $accessory->excerpt ?: Str::limit(strip_tags($accessory->description), 155))
 
@@ -74,7 +74,7 @@
                     </div>
 
                     <p class="mt-4 text-xs text-steel/80">
-                        Available for walk-in pickup or to include with a mail-in repair. Ask in store for stock and colours.
+                        Available for UK delivery or store collection. Ask for stock and colours.
                     </p>
                 </div>
             </div>

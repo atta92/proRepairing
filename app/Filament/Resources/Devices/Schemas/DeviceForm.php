@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Devices\Schemas;
 
+use App\Support\FilamentImageUpload;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -43,10 +44,11 @@ class DeviceForm
                 Textarea::make('content')
                     ->rows(5)
                     ->columnSpanFull(),
-                FileUpload::make('image_path')
-                    ->image()
-                    ->directory('devices')
-                    ->disk('public'),
+                FilamentImageUpload::catalogue(
+                    FileUpload::make('image_path')
+                        ->label('Image')
+                        ->directory('devices')
+                ),
                 TextInput::make('sort_order')
                     ->numeric()
                     ->default(0)

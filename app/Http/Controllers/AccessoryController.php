@@ -14,6 +14,8 @@ class AccessoryController extends Controller
 
         $accessories = Accessory::query()
             ->active()
+            ->withCount('approvedReviews')
+            ->withAvg('approvedReviews', 'rating')
             ->when(
                 $category !== '' && array_key_exists($category, Accessory::CATEGORIES),
                 fn ($query) => $query->where('category', $category)
@@ -34,6 +36,8 @@ class AccessoryController extends Controller
 
         $related = Accessory::query()
             ->active()
+            ->withCount('approvedReviews')
+            ->withAvg('approvedReviews', 'rating')
             ->where('id', '!=', $accessory->id)
             ->where('category', $accessory->category)
             ->orderBy('sort_order')
@@ -44,6 +48,8 @@ class AccessoryController extends Controller
             $related = $related->merge(
                 Accessory::query()
                     ->active()
+                    ->withCount('approvedReviews')
+                    ->withAvg('approvedReviews', 'rating')
                     ->where('id', '!=', $accessory->id)
                     ->whereNotIn('id', $related->pluck('id'))
                     ->orderBy('sort_order')

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', ($settings->about_title ?: 'About us') . ' — ' . $siteSettings->displayName())
+@section('title', ($settings->about_title ?: 'About us') . ' - ' . $siteSettings->displayName())
 
 @section('meta_description', Str::limit(strip_tags($settings->about_body ?? ''), 155))
 

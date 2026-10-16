@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $category->name . ' — ' . $siteSettings->displayName())
+@section('title', $category->name . ' - ' . $siteSettings->displayName())
 
 @section('meta_description', $category->description ?: $category->excerpt ?: 'Repair models and prices for ' . $category->name)
 
@@ -50,27 +50,48 @@
                 @forelse ($category->devices as $device)
                     <a
                         href="{{ route('devices.show', $device->slug) }}"
-                        class="group rounded-2xl border border-mist bg-white p-5 shadow-sm transition hover:border-accent/40 hover:shadow-md"
+                        class="group flex h-full flex-col overflow-hidden rounded-2xl border border-mist bg-white shadow-sm transition hover:border-accent/40 hover:shadow-md"
                     >
-                        <p class="font-display text-lg font-semibold text-ink group-hover:text-accent-dark">
-                            {{ $device->name }}
-                        </p>
-                        <p class="mt-2 text-sm text-steel">
-                            {{ $device->excerpt ?: 'Screens, batteries, charging and more' }}
-                        </p>
-                        <p class="mt-4 text-xs font-medium uppercase tracking-wide text-steel/70">
-                            {{ $device->device_repairs_count }} {{ Str::plural('repair', $device->device_repairs_count) }}
-                        </p>
-                        <p class="mt-2 text-sm font-semibold text-accent">
-                            What needs fixing →
-                        </p>
+                        @if ($device->imageUrl())
+                            <div class="aspect-[4/3] overflow-hidden bg-mist">
+                                <img
+                                    src="{{ $device->imageUrl() }}"
+                                    alt=""
+                                    class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                                    loading="lazy"
+                                >
+                            </div>
+                        @else
+                            <div class="flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-accent/10 to-ink/5">
+                                <i class="bi bi-phone text-3xl text-accent/70" aria-hidden="true"></i>
+                            </div>
+                        @endif
+                        <div class="flex flex-1 flex-col p-5">
+                            <p class="font-display text-lg font-semibold text-ink group-hover:text-accent-dark">
+                                {{ $device->name }}
+                            </p>
+                            <p class="mt-2 text-sm text-steel">
+                                {{ $device->excerpt ?: 'Screens, batteries, charging and more' }}
+                            </p>
+                            <p class="mt-4 text-xs font-medium uppercase tracking-wide text-steel/70">
+                                {{ $device->device_repairs_count }} {{ Str::plural('repair', $device->device_repairs_count) }}
+                            </p>
+                            <p class="mt-2 text-sm font-semibold text-accent">
+                                What needs fixing →
+                            </p>
+                        </div>
                     </a>
                 @empty
                     <p class="text-steel">No models listed in this category yet.</p>
                 @endforelse
             </div>
 
-            <div class="mt-10">
+            @include('partials.quote-cta', [
+                'title' => "Can't find your {$category->name} model?",
+                'text' => "If your {$category->name} isn’t listed above, request a free quotation and we’ll come back with a fixed repair price.",
+            ])
+
+            <div class="mt-8">
                 <a href="{{ route('home') }}#devices" class="btn-ghost">← All categories</a>
             </div>
         </div>

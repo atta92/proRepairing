@@ -156,17 +156,25 @@ class ShopCheckoutController extends Controller
             ]);
 
             foreach ($lines as $line) {
+                $variant = $line['variant'] ?? null;
+
                 ShopOrderItem::query()->create([
                     'shop_order_id' => $order->id,
                     'accessory_id' => $line['product']->id,
-                    'name' => $line['product']->name,
+                    'accessory_variant_id' => $variant?->id,
+                    'name' => $line['name'],
+                    'options_label' => $line['options_label'] ?: null,
                     'type' => $line['product']->type,
-                    'price' => $line['product']->price,
+                    'price' => $line['price'],
                     'quantity' => $line['quantity'],
                 ]);
 
-                if (! $payOnline && $line['product']->stock !== null) {
-                    $line['product']->decrement('stock', $line['quantity']);
+                if (! $payOnline) {
+                    if ($variant && $variant->stock !== null) {
+                        $variant->decrement('stock', $line['quantity']);
+                    } elseif (! $variant && $line['product']->stock !== null) {
+                        $line['product']->decrement('stock', $line['quantity']);
+                    }
                 }
             }
 
@@ -234,10 +242,12 @@ class ShopCheckoutController extends Controller
                     return;
                 }
 
-                $shopOrder->load('items.accessory');
+                $shopOrder->load(['items.accessory', 'items.variant']);
 
                 foreach ($shopOrder->items as $item) {
-                    if ($item->accessory && $item->accessory->stock !== null) {
+                    if ($item->variant && $item->variant->stock !== null) {
+                        $item->variant->decrement('stock', $item->quantity);
+                    } elseif (! $item->variant && $item->accessory && $item->accessory->stock !== null) {
                         $item->accessory->decrement('stock', $item->quantity);
                     }
                 }

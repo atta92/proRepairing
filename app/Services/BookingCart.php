@@ -71,15 +71,12 @@ class BookingCart
     {
         $items = $this->items();
         $subtotal = (float) $items->sum(fn (DeviceRepair $item) => (float) $item->price);
-        $discountPercent = $items->count() >= 2 ? 20 : 0;
-        $discountAmount = round($subtotal * ($discountPercent / 100), 2);
-        $total = round($subtotal - $discountAmount, 2);
 
         return [
             'subtotal' => $subtotal,
-            'discount_percent' => $discountPercent,
-            'discount_amount' => $discountAmount,
-            'total' => $total,
+            'discount_percent' => 0,
+            'discount_amount' => 0.0,
+            'total' => round($subtotal, 2),
             'count' => $items->count(),
         ];
     }

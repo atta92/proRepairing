@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\BeforeAfters\Schemas;
 
+use App\Support\FilamentImageUpload;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -23,22 +24,18 @@ class BeforeAfterForm
                     ->description('Upload the same product: one photo before the repair, one after.')
                     ->columns(2)
                     ->schema([
-                        FileUpload::make('before_image_path')
-                            ->label('Before')
-                            ->image()
-                            ->directory('before-after/before')
-                            ->disk('public')
-                            ->imageEditor()
-                            ->required()
-                            ->helperText('Shown in the Before window'),
-                        FileUpload::make('after_image_path')
-                            ->label('After')
-                            ->image()
-                            ->directory('before-after/after')
-                            ->disk('public')
-                            ->imageEditor()
-                            ->required()
-                            ->helperText('Shown in the After window'),
+                        FilamentImageUpload::landscape(
+                            FileUpload::make('before_image_path')
+                                ->label('Before')
+                                ->directory('before-after/before')
+                                ->required()
+                        ),
+                        FilamentImageUpload::landscape(
+                            FileUpload::make('after_image_path')
+                                ->label('After')
+                                ->directory('before-after/after')
+                                ->required()
+                        ),
                     ]),
                 TextInput::make('sort_order')
                     ->numeric()

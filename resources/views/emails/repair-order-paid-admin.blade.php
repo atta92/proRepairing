@@ -11,7 +11,7 @@ Booking **{{ $order->reference }}** has been paid online.
 
 <x-mail::panel>
 @foreach ($order->items as $item)
-{{ $item->name }} — £{{ number_format((float) $item->price, 2) }}  
+{{ $item->name }} - £{{ number_format((float) $item->price, 2) }}  
 @endforeach
 </x-mail::panel>
 

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Sign in — ' . $siteSettings->displayName())
+@section('title', 'Sign in - ' . $siteSettings->displayName())
 
 @section('meta_robots', 'noindex, nofollow')
 

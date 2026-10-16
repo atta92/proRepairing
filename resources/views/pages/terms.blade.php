@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', ($settings->terms_title ?: 'Terms & conditions') . ' — ' . $siteSettings->displayName())
+@section('title', ($settings->terms_title ?: 'Terms & conditions') . ' - ' . $siteSettings->displayName())
 
 @section('meta_description', Str::limit(strip_tags($settings->terms_body ?? ''), 155))
 
