@@ -20,6 +20,7 @@ class Accessory extends Model
         'compare_at_price',
         'stock',
         'image_path',
+        'gallery_paths',
         'sort_order',
         'is_active',
         'is_featured',
@@ -53,10 +54,65 @@ class Accessory extends Model
             'price' => 'decimal:2',
             'compare_at_price' => 'decimal:2',
             'stock' => 'integer',
+            'gallery_paths' => 'array',
             'sort_order' => 'integer',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (Accessory $accessory): void {
+            $paths = collect($accessory->gallery_paths ?? [])
+                ->filter(fn ($path) => filled($path))
+                ->values()
+                ->all();
+
+            $accessory->gallery_paths = $paths !== [] ? $paths : null;
+            $accessory->image_path = $paths[0] ?? $accessory->image_path;
+        });
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function galleryPaths(): array
+    {
+        $paths = collect($this->gallery_paths ?? [])
+            ->filter(fn ($path) => filled($path))
+            ->map(fn ($path) => ltrim(str_replace('\\', '/', (string) $path), '/'))
+            ->values()
+            ->all();
+
+        if ($paths === [] && filled($this->image_path)) {
+            return [ltrim(str_replace('\\', '/', (string) $this->image_path), '/')];
+        }
+
+        return $paths;
+    }
+
+    public function primaryImagePath(): ?string
+    {
+        return $this->galleryPaths()[0] ?? null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function galleryUrls(): array
+    {
+        return array_map(
+            fn (string $path) => asset('storage/'.$path),
+            $this->galleryPaths()
+        );
+    }
+
+    public function primaryImageUrl(): ?string
+    {
+        $path = $this->primaryImagePath();
+
+        return $path ? asset('storage/'.$path) : null;
     }
 
     public function variants(): HasMany

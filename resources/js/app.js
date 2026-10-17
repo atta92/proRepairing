@@ -372,6 +372,11 @@ window.productVariants = function productVariants(config) {
         hasVariants: Boolean(config.hasVariants) && variants.length > 0,
         inStock: Boolean(config.inStock),
         baseImage: config.baseImage || null,
+        galleryImages: Array.isArray(config.galleryImages)
+            ? config.galleryImages.filter(Boolean)
+            : (config.baseImage ? [config.baseImage] : []),
+        activeImageIndex: 0,
+        preferGallery: false,
         basePrice: Number(config.basePrice || 0),
         baseCompare: config.baseCompare == null ? null : Number(config.baseCompare),
         productName: config.productName || '',
@@ -399,7 +404,35 @@ window.productVariants = function productVariants(config) {
         },
 
         get currentImage() {
-            return this.selectedVariant?.image || this.baseImage;
+            if (!this.preferGallery && this.selectedVariant?.image) {
+                return this.selectedVariant.image;
+            }
+
+            return this.galleryImages[this.activeImageIndex] || this.baseImage;
+        },
+
+        selectGalleryImage(index) {
+            const total = this.galleryImages.length;
+            if (! total) {
+                return;
+            }
+
+            this.activeImageIndex = ((index % total) + total) % total;
+            this.preferGallery = true;
+        },
+
+        isGalleryThumbActive(index) {
+            return this.preferGallery
+                ? this.activeImageIndex === index
+                : ! this.selectedVariant?.image && this.activeImageIndex === index;
+        },
+
+        prevGalleryImage() {
+            this.selectGalleryImage(this.activeImageIndex - 1);
+        },
+
+        nextGalleryImage() {
+            this.selectGalleryImage(this.activeImageIndex + 1);
         },
 
         get priceValue() {
@@ -505,6 +538,7 @@ window.productVariants = function productVariants(config) {
 
         selectOption(key, value) {
             this.selected[key] = value;
+            this.preferGallery = false;
 
             this.optionGroups.forEach((group) => {
                 if (group.key === key) {

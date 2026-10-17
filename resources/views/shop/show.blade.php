@@ -4,20 +4,22 @@
 
 @section('meta_description', $product->excerpt ?: Str::limit(strip_tags((string) $product->description), 155))
 
-@if ($product->image_path)
-    @section('og_image', asset('storage/' . ltrim($product->image_path, '/')))
+@if ($product->primaryImageUrl())
+    @section('og_image', $product->primaryImageUrl())
 @endif
 
 @section('content')
     @php
         $hasVariants = $variants->isNotEmpty();
+        $galleryUrls = $product->galleryUrls();
     @endphp
 
     <section
         class="bg-white"
         x-data="productVariants({
             variants: @js($variants),
-            baseImage: @js($product->image_path ? asset('storage/' . $product->image_path) : null),
+            baseImage: @js($product->primaryImageUrl()),
+            galleryImages: @js($galleryUrls),
             basePrice: {{ (float) $product->price }},
             baseCompare: {{ $product->compare_at_price ? (float) $product->compare_at_price : 'null' }},
             hasVariants: {{ $hasVariants ? 'true' : 'false' }},
@@ -52,20 +54,76 @@
                 {{-- Gallery --}}
                 <div class="lg:col-span-6 xl:col-span-7">
                     <div class="sticky top-28">
-                        <div class="pdp-gallery flex aspect-square items-center justify-center overflow-hidden rounded-3xl bg-[#f6f7f9]">
-                            <template x-if="currentImage">
-                                <img
-                                    :src="currentImage"
-                                    :alt="@js($product->name)"
-                                    class="max-h-full max-w-full object-contain p-6 sm:p-10"
-                                >
-                            </template>
-                            <template x-if="!currentImage">
-                                <div class="flex h-full w-full flex-col items-center justify-center gap-3 text-steel/50">
-                                    <i class="bi bi-phone text-6xl" aria-hidden="true"></i>
-                                    <span class="text-sm">Product image</span>
+                        <div class="flex flex-col gap-3 sm:gap-4 lg:flex-row-reverse lg:items-start">
+                            <div class="relative min-w-0 flex-1">
+                                <div class="pdp-gallery relative aspect-square overflow-hidden rounded-2xl bg-[#eef1f4] sm:rounded-3xl">
+                                    <template x-if="currentImage">
+                                        <img
+                                            :src="currentImage"
+                                            :alt="@js($product->name)"
+                                            class="absolute inset-0 h-full w-full object-contain object-center p-4 sm:p-6"
+                                        >
+                                    </template>
+                                    <template x-if="!currentImage">
+                                        <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-steel/50">
+                                            <i class="bi bi-phone text-6xl" aria-hidden="true"></i>
+                                            <span class="text-sm">Product image</span>
+                                        </div>
+                                    </template>
+
+                                    <template x-if="galleryImages.length > 1">
+                                        <div class="pointer-events-none absolute inset-0 flex items-center justify-between p-3 sm:p-4">
+                                            <button
+                                                type="button"
+                                                class="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-mist/80 bg-white/95 text-ink shadow-sm transition hover:bg-white"
+                                                @click="prevGalleryImage()"
+                                                aria-label="Previous photo"
+                                                data-no-spinner
+                                            >
+                                                <i class="bi bi-chevron-left text-lg" aria-hidden="true"></i>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                class="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-mist/80 bg-white/95 text-ink shadow-sm transition hover:bg-white"
+                                                @click="nextGalleryImage()"
+                                                aria-label="Next photo"
+                                                data-no-spinner
+                                            >
+                                                <i class="bi bi-chevron-right text-lg" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                    </template>
+
+                                    <div
+                                        class="absolute bottom-3 right-3 rounded-full bg-ink/75 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white backdrop-blur-sm"
+                                        x-show="galleryImages.length > 1"
+                                        x-cloak
+                                        x-text="(activeImageIndex + 1) + ' / ' + galleryImages.length"
+                                    ></div>
                                 </div>
-                            </template>
+                            </div>
+
+                            <div
+                                class="flex gap-2 overflow-x-auto pb-1 lg:w-[4.75rem] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:max-h-[min(32rem,70vh)]"
+                                x-show="galleryImages.length > 1"
+                                x-cloak
+                            >
+                                <template x-for="(image, index) in galleryImages" :key="image + '-' + index">
+                                    <button
+                                        type="button"
+                                        class="pdp-thumb relative h-[4.25rem] w-[4.25rem] shrink-0 overflow-hidden rounded-xl border bg-[#eef1f4] transition lg:h-16 lg:w-16"
+                                        :class="isGalleryThumbActive(index)
+                                            ? 'border-accent ring-2 ring-accent/30'
+                                            : 'border-mist/80 hover:border-steel/40'"
+                                        @click="selectGalleryImage(index)"
+                                        :aria-label="'Show photo ' + (index + 1)"
+                                        :aria-current="isGalleryThumbActive(index) ? 'true' : 'false'"
+                                        data-no-spinner
+                                    >
+                                        <img :src="image" alt="" class="absolute inset-0 h-full w-full object-contain object-center p-1">
+                                    </button>
+                                </template>
+                            </div>
                         </div>
 
                         @include('partials.product-rating', [

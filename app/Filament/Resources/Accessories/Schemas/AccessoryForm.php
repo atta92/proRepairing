@@ -74,10 +74,11 @@ class AccessoryForm
                             ->helperText('Leave empty for unlimited stock.'),
                     ]),
                 FilamentImageUpload::product(
-                    FileUpload::make('image_path')
-                        ->label('Main image')
+                    FileUpload::make('gallery_paths')
+                        ->label('Product photos')
                         ->directory('accessories')
-                        ->columnSpanFull()
+                        ->columnSpanFull(),
+                    multiple: true
                 ),
                 TextInput::make('sort_order')
                     ->numeric()

@@ -131,23 +131,23 @@
                 @forelse ($categories as $category)
                     <a
                         href="{{ route('categories.show', $category->slug) }}"
-                        class="group flex h-full flex-col overflow-hidden rounded-2xl border border-mist bg-snow transition hover:border-accent/40 hover:bg-white hover:shadow-md"
+                        class="group flex h-full flex-col overflow-hidden rounded-2xl border border-mist bg-white transition hover:border-accent/40 hover:shadow-md"
                     >
-                        @if ($category->imageUrl())
-                            <div class="aspect-[4/3] overflow-hidden bg-mist">
+                        <div class="relative aspect-[4/3] shrink-0 overflow-hidden bg-[#eef1f4]">
+                            @if ($category->imageUrl())
                                 <img
                                     src="{{ $category->imageUrl() }}"
                                     alt=""
-                                    class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                                    class="absolute inset-0 h-full w-full object-contain object-center p-3 sm:p-4"
                                     loading="lazy"
                                 >
-                            </div>
-                        @else
-                            <div class="flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-accent/10 to-ink/5">
-                                <i class="bi bi-phone text-3xl text-accent/70" aria-hidden="true"></i>
-                            </div>
-                        @endif
-                        <div class="flex flex-1 flex-col p-4 sm:p-5">
+                            @else
+                                <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent/10 to-ink/5">
+                                    <i class="bi bi-phone text-3xl text-accent/70" aria-hidden="true"></i>
+                                </div>
+                            @endif
+                        </div>
+                        <div class="flex flex-1 flex-col bg-white p-4 sm:p-5">
                             <p class="font-display text-base font-semibold text-ink group-hover:text-accent-dark sm:text-lg">
                                 {{ $category->name }}
                             </p>
@@ -157,7 +157,7 @@
                             <p class="mt-3 text-xs font-medium uppercase tracking-wide text-steel/70">
                                 {{ $category->devices_count }} {{ Str::plural('model', $category->devices_count) }}
                             </p>
-                            <p class="mt-2 text-sm font-semibold text-accent">View models →</p>
+                            <p class="mt-auto pt-2 text-sm font-semibold text-accent">View models →</p>
                         </div>
                     </a>
                 @empty

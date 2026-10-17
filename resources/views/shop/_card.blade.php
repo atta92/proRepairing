@@ -1,18 +1,19 @@
 <article class="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-mist bg-white transition hover:border-accent/40 hover:shadow-md">
     <a href="{{ route('shop.show', $product) }}" class="flex flex-1 flex-col">
-        @if ($product->image_path)
-            <div class="aspect-square overflow-hidden bg-mist">
+        <div class="relative aspect-square shrink-0 overflow-hidden bg-[#eef1f4]">
+            @if ($product->primaryImageUrl())
                 <img
-                    src="{{ asset('storage/' . $product->image_path) }}"
+                    src="{{ $product->primaryImageUrl() }}"
                     alt=""
-                    class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                    class="absolute inset-0 h-full w-full object-contain object-center p-3 sm:p-4"
+                    loading="lazy"
                 >
-            </div>
-        @else
-            <div class="flex aspect-square items-center justify-center bg-gradient-to-br from-accent/10 to-ink/5">
-                <i class="bi bi-bag text-3xl text-accent/70" aria-hidden="true"></i>
-            </div>
-        @endif
+            @else
+                <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent/10 to-ink/5">
+                    <i class="bi bi-bag text-3xl text-accent/70" aria-hidden="true"></i>
+                </div>
+            @endif
+        </div>
 
         <div class="flex flex-1 flex-col p-3.5 sm:p-5">
             <p class="text-[10px] font-semibold uppercase tracking-wider text-accent sm:text-xs">

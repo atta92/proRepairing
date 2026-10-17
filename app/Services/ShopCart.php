@@ -123,7 +123,7 @@ class ShopCart
                     }
 
                     $price = (float) $variant->price;
-                    $imagePath = $variant->image_path ?: $product->image_path;
+                    $imagePath = $variant->image_path ?: $product->primaryImagePath();
 
                     return [
                         'key' => $key,
@@ -159,7 +159,7 @@ class ShopCart
                         'price_formatted' => '£'.number_format($price, 2),
                         'quantity' => $quantity,
                         'line_total' => round($price * $quantity, 2),
-                        'image_path' => $product->image_path,
+                        'image_path' => $product->primaryImagePath(),
                         'type_label' => $product->type_label,
                     ];
                 }

@@ -52,20 +52,20 @@
                         href="{{ route('devices.show', $device->slug) }}"
                         class="group flex h-full flex-col overflow-hidden rounded-2xl border border-mist bg-white shadow-sm transition hover:border-accent/40 hover:shadow-md"
                     >
-                        @if ($device->imageUrl())
-                            <div class="aspect-[4/3] overflow-hidden bg-mist">
+                        <div class="relative aspect-[4/3] shrink-0 overflow-hidden bg-[#eef1f4]">
+                            @if ($device->imageUrl())
                                 <img
                                     src="{{ $device->imageUrl() }}"
                                     alt=""
-                                    class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                                    class="absolute inset-0 h-full w-full object-contain object-center p-3 sm:p-4"
                                     loading="lazy"
                                 >
-                            </div>
-                        @else
-                            <div class="flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-accent/10 to-ink/5">
-                                <i class="bi bi-phone text-3xl text-accent/70" aria-hidden="true"></i>
-                            </div>
-                        @endif
+                            @else
+                                <div class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-accent/10 to-ink/5">
+                                    <i class="bi bi-phone text-3xl text-accent/70" aria-hidden="true"></i>
+                                </div>
+                            @endif
+                        </div>
                         <div class="flex flex-1 flex-col p-5">
                             <p class="font-display text-lg font-semibold text-ink group-hover:text-accent-dark">
                                 {{ $device->name }}
@@ -76,7 +76,7 @@
                             <p class="mt-4 text-xs font-medium uppercase tracking-wide text-steel/70">
                                 {{ $device->device_repairs_count }} {{ Str::plural('repair', $device->device_repairs_count) }}
                             </p>
-                            <p class="mt-2 text-sm font-semibold text-accent">
+                            <p class="mt-auto pt-2 text-sm font-semibold text-accent">
                                 What needs fixing →
                             </p>
                         </div>
