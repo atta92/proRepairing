@@ -20,6 +20,9 @@ class ShopOrdersTable
                 TextColumn::make('customer.name')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('items_count')
+                    ->counts('items')
+                    ->label('Lines'),
                 TextColumn::make('fulfilment')
                     ->badge(),
                 TextColumn::make('payment_method')
@@ -28,6 +31,11 @@ class ShopOrdersTable
                 TextColumn::make('total')
                     ->money('GBP')
                     ->sortable(),
+                TextColumn::make('commission')
+                    ->label('Commission')
+                    ->state(fn ($record) => (float) $record->items->sum('commission_amount'))
+                    ->money('GBP')
+                    ->sortable(false),
                 TextColumn::make('status')
                     ->badge()
                     ->sortable(),

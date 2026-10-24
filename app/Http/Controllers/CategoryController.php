@@ -12,13 +12,15 @@ class CategoryController extends Controller
         $category = Category::query()
             ->where('slug', $slug)
             ->where('is_active', true)
-            ->with(['devices' => fn ($query) => $query
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->withCount(['deviceRepairs' => fn ($q) => $q->where('is_active', true)])
-            ])
             ->firstOrFail();
 
-        return view('categories.show', compact('category'));
+        $devices = $category->devices()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->withCount(['deviceRepairs' => fn ($q) => $q->where('is_active', true)])
+            ->paginate(8)
+            ->withQueryString();
+
+        return view('categories.show', compact('category', 'devices'));
     }
 }

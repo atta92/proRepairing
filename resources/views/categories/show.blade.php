@@ -46,8 +46,8 @@
                 <span class="mt-3 inline-block h-1 w-16 rounded-full bg-accent" aria-hidden="true"></span>
             </div>
 
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                @forelse ($category->devices as $device)
+            <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-5">
+                @forelse ($devices as $device)
                     <a
                         href="{{ route('devices.show', $device->slug) }}"
                         class="group flex h-full flex-col overflow-hidden rounded-2xl border border-mist bg-white shadow-sm transition hover:border-accent/40 hover:shadow-md"
@@ -82,9 +82,15 @@
                         </div>
                     </a>
                 @empty
-                    <p class="text-steel">No models listed in this category yet.</p>
+                    <p class="col-span-full text-steel">No models listed in this category yet.</p>
                 @endforelse
             </div>
+
+            @if ($devices->hasPages())
+                <div class="mt-10">
+                    {{ $devices->links() }}
+                </div>
+            @endif
 
             @include('partials.quote-cta', [
                 'title' => "Can't find your {$category->name} model?",

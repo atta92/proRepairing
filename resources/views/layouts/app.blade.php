@@ -11,6 +11,8 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=dm-sans:400,500,600,700|space-grotesk:500,600,700" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/brands.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/fontawesome.min.css">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -38,6 +40,7 @@
     @include('partials.quote-modal')
     @include('partials.bag-drawer')
     @include('partials.image-lightbox')
+    @include('partials.floating-actions')
 
     @stack('scripts')
 </body>

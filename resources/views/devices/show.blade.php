@@ -79,8 +79,8 @@
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-start gap-3">
-                                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-2xl leading-none" aria-hidden="true">
-                                            {{ $sku->repair->emoji() }}
+                                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-lg text-accent" aria-hidden="true">
+                                            <i class="bi {{ $sku->repair->iconClass() }}"></i>
                                         </span>
                                         <div class="min-w-0">
                                             <p class="font-display text-lg font-semibold text-ink">{{ $sku->repair->name }}</p>
@@ -134,6 +134,59 @@
                 </div>
             @endif
 
+            @if ($recommendedProducts->isNotEmpty())
+                <div class="mt-12">
+                    <div class="flex flex-wrap items-end justify-between gap-4">
+                        <div class="max-w-2xl">
+                            <p class="text-sm font-semibold uppercase tracking-wider text-accent">Recommended</p>
+                            <h2 class="mt-1 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                                Shop accessories for your {{ $device->name }}
+                            </h2>
+                            <p class="mt-2 text-sm text-steel">
+                                Our own shop picks first, then trusted sellers.
+                            </p>
+                        </div>
+                        <a href="{{ route('shop.index') }}" class="text-sm font-semibold text-accent hover:text-accent-dark">
+                            See more →
+                        </a>
+                    </div>
+
+                    <div class="relative mt-8" data-product-scroller>
+                        <button
+                            type="button"
+                            class="absolute left-1 top-1/2 z-20 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-mist bg-white text-ink shadow-md transition hover:border-accent hover:text-accent disabled:pointer-events-none disabled:opacity-0 sm:left-0"
+                            data-scroller-prev
+                            aria-label="Previous products"
+                            data-no-spinner
+                        >
+                            <i class="bi bi-chevron-left text-base" aria-hidden="true"></i>
+                        </button>
+                        <button
+                            type="button"
+                            class="absolute right-1 top-1/2 z-20 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-mist bg-white text-ink shadow-md transition hover:border-accent hover:text-accent disabled:pointer-events-none disabled:opacity-0 sm:right-0"
+                            data-scroller-next
+                            aria-label="Next products"
+                            data-no-spinner
+                        >
+                            <i class="bi bi-chevron-right text-base" aria-hidden="true"></i>
+                        </button>
+
+                        <div class="overflow-hidden px-8 sm:px-10">
+                            <div
+                                class="product-scroller-track flex items-stretch gap-3 overflow-x-auto overflow-y-hidden scroll-smooth snap-x snap-mandatory sm:gap-4"
+                                data-scroller-track
+                            >
+                                @foreach ($recommendedProducts as $product)
+                                    <div class="product-scroller-item shrink-0 snap-start">
+                                        @include('shop._card', ['product' => $product])
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             @include('partials.quote-cta', [
                 'title' => "Can't see the right repair for {$device->name}?",
                 'text' => 'Unusual fault, water damage, or a repair not listed? Request a free quotation and we’ll confirm a fixed price.',
@@ -149,29 +202,83 @@
 @endsection
 
 @push('scripts')
+<style>
+    .product-scroller-track {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        overscroll-behavior-x: contain;
+    }
+    .product-scroller-track::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none;
+    }
+    /* 2 visible on small screens, 4 on desktop; 2 more via scroll */
+    .product-scroller-item {
+        flex: 0 0 calc((100% - 0.75rem) / 2);
+    }
+    @media (min-width: 640px) {
+        .product-scroller-item {
+            flex: 0 0 calc((100% - 3rem) / 4);
+        }
+    }
+</style>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('repair-book-form');
-    if (!form) return;
+    if (form) {
+        const boxes = [...form.querySelectorAll('input[name="device_repair_ids[]"]')];
+        const countEl = document.getElementById('selected-count');
+        const totalEl = document.getElementById('selected-total');
+        const bookBtn = document.getElementById('book-now-btn');
 
-    const boxes = [...form.querySelectorAll('input[name="device_repair_ids[]"]')];
-    const countEl = document.getElementById('selected-count');
-    const totalEl = document.getElementById('selected-total');
-    const bookBtn = document.getElementById('book-now-btn');
+        const update = () => {
+            const selected = boxes.filter((box) => box.checked);
+            const total = selected.reduce((sum, box) => sum + Number(box.dataset.price || 0), 0);
 
-    const update = () => {
-        const selected = boxes.filter((box) => box.checked);
-        const total = selected.reduce((sum, box) => sum + Number(box.dataset.price || 0), 0);
+            countEl.textContent = String(selected.length);
+            totalEl.textContent = '£' + total.toFixed(total % 1 ? 2 : 0);
+            if (bookBtn) {
+                bookBtn.disabled = selected.length === 0;
+            }
+        };
 
-        countEl.textContent = String(selected.length);
-        totalEl.textContent = '£' + total.toFixed(total % 1 ? 2 : 0);
-        if (bookBtn) {
-            bookBtn.disabled = selected.length === 0;
-        }
-    };
+        boxes.forEach((box) => box.addEventListener('change', update));
+        update();
+    }
 
-    boxes.forEach((box) => box.addEventListener('change', update));
-    update();
+    document.querySelectorAll('[data-product-scroller]').forEach((root) => {
+        const track = root.querySelector('[data-scroller-track]');
+        const prev = root.querySelector('[data-scroller-prev]');
+        const next = root.querySelector('[data-scroller-next]');
+        if (!track || !prev || !next) return;
+
+        const step = () => {
+            const item = track.querySelector('.product-scroller-item');
+            if (!item) {
+                return track.clientWidth * 0.5;
+            }
+            const gap = Number.parseFloat(getComputedStyle(track).columnGap || getComputedStyle(track).gap) || 0;
+            // Advance by 2 cards per click
+            return (item.getBoundingClientRect().width + gap) * 2;
+        };
+
+        const syncButtons = () => {
+            const maxScroll = track.scrollWidth - track.clientWidth - 2;
+            prev.disabled = track.scrollLeft <= 2;
+            next.disabled = track.scrollLeft >= maxScroll;
+        };
+
+        prev.addEventListener('click', () => {
+            track.scrollBy({ left: -step(), behavior: 'smooth' });
+        });
+        next.addEventListener('click', () => {
+            track.scrollBy({ left: step(), behavior: 'smooth' });
+        });
+        track.addEventListener('scroll', syncButtons, { passive: true });
+        window.addEventListener('resize', syncButtons);
+        syncButtons();
+    });
 });
 </script>
 @endpush

@@ -51,4 +51,12 @@ class ShopOrder extends Model
     {
         return $this->hasMany(ShopOrderItem::class);
     }
+
+    /**
+     * @return \Illuminate\Support\Collection<int|string, \Illuminate\Support\Collection<int, ShopOrderItem>>
+     */
+    public function itemsGroupedByVendor()
+    {
+        return $this->items->groupBy(fn (ShopOrderItem $item) => $item->vendor_id ?? 0);
+    }
 }

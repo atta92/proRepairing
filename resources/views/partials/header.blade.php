@@ -20,7 +20,7 @@
     <div class="site-container relative z-[1] flex items-center justify-between gap-4 py-4">
         @include('partials.site-brand')
 
-        <nav class="hidden min-w-0 flex-1 items-center justify-center gap-0.5 lg:flex" aria-label="Primary" id="desktop-nav">
+        <nav class="hidden min-w-0 flex-1 items-center justify-center gap-0.5 nav:flex" aria-label="Primary" id="desktop-nav">
             <a href="{{ route('home') }}" class="site-nav-link whitespace-nowrap rounded-lg px-2.5 py-2 {{ request()->routeIs('home') ? 'site-nav-link-active' : '' }}">
                 Home
             </a>
@@ -113,7 +113,17 @@
                         aria-haspopup="true"
                     >
                         <i class="bi bi-person" aria-hidden="true"></i>
-                        <span>{{ auth()->user()->is_admin ? 'Admin' : 'Account' }}</span>
+                        <span>
+                            @if (auth()->user()->is_admin)
+                                Admin
+                            @elseif (auth()->user()->isApprovedVendor())
+                                Seller
+                            @elseif (auth()->user()->hasVendorAccount())
+                                Seller
+                            @else
+                                Account
+                            @endif
+                        </span>
                         <svg class="h-3.5 w-3.5 shrink-0 opacity-70" data-nav-chevron viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd" />
                         </svg>
@@ -125,6 +135,12 @@
                     >
                         @if (auth()->user()->is_admin)
                             <a href="{{ url('/admin') }}" class="block rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white" role="menuitem">Admin panel</a>
+                        @elseif (auth()->user()->isApprovedVendor())
+                            <a href="{{ url('/seller') }}" class="block rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white" role="menuitem">Seller centre</a>
+                            <a href="{{ url('/seller/products') }}" class="block rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white" role="menuitem">My products</a>
+                            <a href="{{ url('/seller/orders') }}" class="block rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white" role="menuitem">My orders</a>
+                        @elseif (auth()->user()->hasVendorAccount())
+                            <a href="{{ route('seller.home') }}" class="block rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white" role="menuitem">Application status</a>
                         @else
                             <a href="{{ route('account.dashboard') }}" class="block rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white" role="menuitem">Dashboard</a>
                             <a href="{{ route('account.profile') }}" class="block rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white" role="menuitem">Settings</a>
@@ -156,7 +172,7 @@
             <button
                 id="nav-toggle"
                 type="button"
-                class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 text-white transition hover:bg-white/10 lg:hidden"
+                class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 text-white transition hover:bg-white/10 nav:hidden"
                 aria-controls="nav-panel"
                 aria-expanded="false"
                 aria-label="Open menu"
@@ -168,7 +184,7 @@
         </div>
     </div>
 
-    <div id="nav-panel" class="relative z-[1] hidden border-t border-white/10 bg-ink-soft lg:hidden" role="dialog" aria-label="Mobile menu">
+    <div id="nav-panel" class="relative z-[1] hidden border-t border-white/10 bg-ink-soft nav:hidden" role="dialog" aria-label="Mobile menu">
         <nav class="site-container flex flex-col gap-1 py-4">
             <a href="{{ route('home') }}" class="rounded-lg px-3 py-2.5 text-sm font-medium text-white/85 hover:bg-white/10">Home</a>
 
@@ -222,6 +238,11 @@
             @auth
                 @if (auth()->user()->is_admin)
                     <a href="{{ url('/admin') }}" class="rounded-lg px-3 py-2.5 text-sm font-medium text-white/85 hover:bg-white/10">Admin panel</a>
+                @elseif (auth()->user()->isApprovedVendor())
+                    <a href="{{ url('/seller') }}" class="rounded-lg px-3 py-2.5 text-sm font-medium text-white/85 hover:bg-white/10">Seller centre</a>
+                    <a href="{{ url('/seller/products') }}" class="rounded-lg px-3 py-2.5 text-sm font-medium text-white/85 hover:bg-white/10">My products</a>
+                @elseif (auth()->user()->hasVendorAccount())
+                    <a href="{{ route('seller.home') }}" class="rounded-lg px-3 py-2.5 text-sm font-medium text-white/85 hover:bg-white/10">Application status</a>
                 @else
                     <a href="{{ route('account.dashboard') }}" class="rounded-lg px-3 py-2.5 text-sm font-medium text-white/85 hover:bg-white/10">My account</a>
                 @endif

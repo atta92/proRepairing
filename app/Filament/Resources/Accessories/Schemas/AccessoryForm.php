@@ -4,8 +4,11 @@ namespace App\Filament\Resources\Accessories\Schemas;
 
 use App\Models\Accessory;
 use App\Models\AccessoryVariant;
+use App\Models\Vendor;
 use App\Support\FilamentImageUpload;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -19,8 +22,21 @@ class AccessoryForm
 {
     public static function configure(Schema $schema): Schema
     {
+        $isSellerPanel = Filament::getCurrentPanel()?->getId() === 'seller';
+
         return $schema
             ->components([
+                $isSellerPanel
+                    ? Hidden::make('vendor_id')
+                        ->default(fn () => Filament::auth()->user()?->vendor?->id)
+                    : Select::make('vendor_id')
+                        ->label('Vendor / shop')
+                        ->relationship('vendor', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->required()
+                        ->default(fn () => Vendor::platform()?->id)
+                        ->helperText('Own shop = platform vendor (0% commission).'),
                 TextInput::make('name')
                     ->required()
                     ->maxLength(255)

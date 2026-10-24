@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             OrderSeeder::class,
             QuoteSeeder::class,
             PostSeeder::class,
+            VendorSeeder::class,
             AccessorySeeder::class,
             ProductReviewSeeder::class,
         ]);

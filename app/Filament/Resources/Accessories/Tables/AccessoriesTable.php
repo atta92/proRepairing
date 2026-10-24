@@ -28,6 +28,11 @@ class AccessoriesTable
                     ->searchable()
                     ->sortable()
                     ->wrap(),
+                TextColumn::make('vendor.name')
+                    ->label('Vendor')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('type')
                     ->formatStateUsing(fn (string $state): string => Accessory::TYPES[$state] ?? $state)
                     ->badge()
@@ -58,6 +63,8 @@ class AccessoriesTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('vendor')
+                    ->relationship('vendor', 'name'),
                 SelectFilter::make('type')
                     ->options(Accessory::TYPES),
                 SelectFilter::make('category')

@@ -116,7 +116,7 @@
                                         <dd x-text="totals.count"></dd>
                                     </div>
                                 </dl>
-                                <p class="mt-3 text-xs text-steel/80">Delivery (£3.99) or free collection chosen at checkout.</p>
+                                <p class="mt-3 text-xs text-steel/80">UK delivery (£3.99) added at checkout.</p>
                                 <a
                                     href="{{ route('shop.checkout') }}"
                                     class="btn-primary mt-6 w-full"

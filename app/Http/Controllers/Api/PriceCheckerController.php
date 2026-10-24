@@ -31,7 +31,7 @@ class PriceCheckerController extends Controller
                     'r' => $device->deviceRepairs->map(fn ($sku) => [
                         'i' => $sku->id,
                         'n' => $sku->repair->name,
-                        'e' => $sku->repair->emoji(),
+                        'ic' => $sku->repair->iconClass(),
                         'p' => '£' . number_format((float) $sku->price, 0),
                         't' => $sku->turnaround,
                         'w' => $sku->warranty_months,

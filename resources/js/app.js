@@ -51,6 +51,328 @@ document.addEventListener('alpine:init', () => {
         },
     });
 
+    Alpine.data('shopCatalog', (config = {}) => ({
+        ready: false,
+        filtersOpen: false,
+        loading: false,
+        seller: config.seller || '',
+        selectedTypes: Array.isArray(config.selectedTypes) ? [...config.selectedTypes] : [],
+        selectedCategories: Array.isArray(config.selectedCategories) ? [...config.selectedCategories] : [],
+        platformSeller: config.platformSeller || '',
+        endpoint: config.endpoint || '/shop',
+        title: config.title || 'Shop',
+        total: Number(config.total || 0),
+        types: Array.isArray(config.types) ? config.types : [],
+        categories: Array.isArray(config.categories) ? config.categories : [],
+        requestId: 0,
+        sellerCanPrev: false,
+        sellerCanNext: false,
+
+        get activeFilterCount() {
+            return this.selectedTypes.length
+                + this.selectedCategories.length
+                + (this.seller === 'all' ? 1 : 0);
+        },
+
+        get hasSecondaryFilters() {
+            return this.selectedTypes.length > 0 || this.selectedCategories.length > 0;
+        },
+
+        get selectedTypeChips() {
+            return this.selectedTypes.map((slug) => ({
+                slug,
+                label: this.types.find((item) => item.slug === slug)?.label || slug,
+            }));
+        },
+
+        get selectedCategoryChips() {
+            return this.selectedCategories.map((slug) => ({
+                slug,
+                label: this.categories.find((item) => item.slug === slug)?.label || slug,
+            }));
+        },
+
+        get summaryText() {
+            const parts = [
+                `${this.total} ${this.total === 1 ? 'item' : 'items'}`,
+            ];
+
+            this.selectedTypeChips.forEach((chip) => parts.push(chip.label));
+            this.selectedCategoryChips.forEach((chip) => parts.push(chip.label));
+
+            return parts.join(' · ');
+        },
+
+        isTypeSelected(slug) {
+            return this.selectedTypes.includes(slug);
+        },
+
+        isCategorySelected(slug) {
+            return this.selectedCategories.includes(slug);
+        },
+
+        init() {
+            setTimeout(() => {
+                this.ready = true;
+                this.$nextTick(() => {
+                    this.syncSellerScroll();
+                    this.scrollActiveSellerIntoView();
+                });
+            }, 220);
+
+            window.addEventListener('popstate', () => {
+                this.syncFromUrl(window.location.href, false);
+            });
+
+            window.addEventListener('resize', () => {
+                this.syncSellerScroll();
+            });
+        },
+
+        syncSellerScroll() {
+            const track = this.$refs.sellerTabs;
+            if (!track) {
+                this.sellerCanPrev = false;
+                this.sellerCanNext = false;
+                return;
+            }
+
+            const max = track.scrollWidth - track.clientWidth;
+            this.sellerCanPrev = track.scrollLeft > 4;
+            this.sellerCanNext = max > 4 && track.scrollLeft < max - 4;
+        },
+
+        scrollSellers(direction) {
+            const track = this.$refs.sellerTabs;
+            if (!track) {
+                return;
+            }
+
+            const amount = Math.max(track.clientWidth * 0.65, 160);
+            track.scrollBy({ left: direction * amount, behavior: 'smooth' });
+        },
+
+        scrollActiveSellerIntoView() {
+            const track = this.$refs.sellerTabs;
+            if (!track) {
+                return;
+            }
+
+            const active = track.querySelector('.shop-seller-chip.is-active');
+            if (!active || typeof active.scrollIntoView !== 'function') {
+                return;
+            }
+
+            active.scrollIntoView({
+                behavior: 'smooth',
+                inline: 'nearest',
+                block: 'nearest',
+            });
+            this.syncSellerScroll();
+        },
+
+        parseListParam(url, key) {
+            const bracketed = url.searchParams.getAll(`${key}[]`);
+            if (bracketed.length) {
+                return bracketed.filter(Boolean);
+            }
+
+            const repeated = url.searchParams.getAll(key);
+            if (repeated.length > 1) {
+                return repeated.filter(Boolean);
+            }
+
+            const single = url.searchParams.get(key) || '';
+            if (!single) {
+                return [];
+            }
+
+            return single.split(',').map((value) => value.trim()).filter(Boolean);
+        },
+
+        buildUrl(page = null) {
+            const url = new URL(this.endpoint, window.location.origin);
+
+            if (this.seller && this.seller !== this.platformSeller) {
+                url.searchParams.set('seller', this.seller);
+            }
+
+            if (this.selectedTypes.length) {
+                url.searchParams.set('type', this.selectedTypes.join(','));
+            }
+
+            if (this.selectedCategories.length) {
+                url.searchParams.set('category', this.selectedCategories.join(','));
+            }
+
+            if (page && Number(page) > 1) {
+                url.searchParams.set('page', String(page));
+            }
+
+            return url;
+        },
+
+        syncFromUrl(href, fetch = true) {
+            const url = new URL(href, window.location.origin);
+            this.seller = url.searchParams.get('seller') || this.platformSeller || '';
+            this.selectedTypes = this.parseListParam(url, 'type');
+            this.selectedCategories = this.parseListParam(url, 'category');
+
+            if (fetch) {
+                this.fetchResults({ push: false, page: url.searchParams.get('page') });
+            }
+        },
+
+        setSeller(slug) {
+            if (this.seller === slug && !this.hasSecondaryFilters) {
+                this.$nextTick(() => this.scrollActiveSellerIntoView());
+                return Promise.resolve();
+            }
+
+            this.seller = slug;
+            this.selectedTypes = [];
+            this.selectedCategories = [];
+            return this.fetchResults().then(() => {
+                this.$nextTick(() => this.scrollActiveSellerIntoView());
+            });
+        },
+
+        clearTypes() {
+            if (!this.selectedTypes.length) {
+                return Promise.resolve();
+            }
+
+            this.selectedTypes = [];
+            return this.fetchResults();
+        },
+
+        clearCategories() {
+            if (!this.selectedCategories.length) {
+                return Promise.resolve();
+            }
+
+            this.selectedCategories = [];
+            return this.fetchResults();
+        },
+
+        toggleType(slug) {
+            if (this.isTypeSelected(slug)) {
+                this.selectedTypes = this.selectedTypes.filter((value) => value !== slug);
+            } else {
+                this.selectedTypes = [...this.selectedTypes, slug];
+            }
+
+            return this.fetchResults();
+        },
+
+        toggleCategory(slug) {
+            if (this.isCategorySelected(slug)) {
+                this.selectedCategories = this.selectedCategories.filter((value) => value !== slug);
+            } else {
+                this.selectedCategories = [...this.selectedCategories, slug];
+            }
+
+            return this.fetchResults();
+        },
+
+        removeType(slug) {
+            this.selectedTypes = this.selectedTypes.filter((value) => value !== slug);
+            return this.fetchResults();
+        },
+
+        removeCategory(slug) {
+            this.selectedCategories = this.selectedCategories.filter((value) => value !== slug);
+            return this.fetchResults();
+        },
+
+        resetFilters() {
+            this.seller = this.platformSeller || '';
+            this.selectedTypes = [];
+            this.selectedCategories = [];
+            this.filtersOpen = false;
+            return this.fetchResults();
+        },
+
+        clearSecondaryFilters() {
+            this.selectedTypes = [];
+            this.selectedCategories = [];
+            return this.fetchResults();
+        },
+
+        onResultsClick(event) {
+            const link = event.target.closest('a');
+            if (!link || !this.$refs.results?.contains(link)) {
+                return;
+            }
+
+            const pagination = link.closest('[data-shop-pagination]');
+            if (!pagination) {
+                return;
+            }
+
+            event.preventDefault();
+            const url = new URL(link.href, window.location.origin);
+            this.seller = url.searchParams.get('seller') || this.platformSeller || '';
+            this.selectedTypes = this.parseListParam(url, 'type');
+            this.selectedCategories = this.parseListParam(url, 'category');
+            this.fetchResults({ page: url.searchParams.get('page') });
+        },
+
+        async fetchResults({ push = true, page = null } = {}) {
+            const url = this.buildUrl(page);
+            const requestId = ++this.requestId;
+            this.loading = true;
+
+            if (push) {
+                history.pushState({ shopCatalog: true }, '', url.pathname + url.search);
+            }
+
+            try {
+                const response = await fetch(url.toString(), {
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Shop filter request failed');
+                }
+
+                const data = await response.json();
+
+                if (requestId !== this.requestId) {
+                    return;
+                }
+
+                this.seller = data.seller || this.seller;
+                this.selectedTypes = Array.isArray(data.selectedTypes) ? data.selectedTypes : [];
+                this.selectedCategories = Array.isArray(data.selectedCategories) ? data.selectedCategories : [];
+                this.total = Number(data.total || 0);
+                this.title = data.title || this.title;
+                this.types = Array.isArray(data.types) ? data.types : [];
+                this.categories = Array.isArray(data.categories) ? data.categories : [];
+
+                if (this.$refs.results) {
+                    this.$refs.results.innerHTML = data.html || '';
+                    this.$nextTick(() => {
+                        if (window.Alpine?.initTree) {
+                            window.Alpine.initTree(this.$refs.results);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+                // Fallback: full navigation if AJAX fails.
+                window.location.href = url.pathname + url.search;
+            } finally {
+                if (requestId === this.requestId) {
+                    this.loading = false;
+                }
+            }
+        },
+    }));
+
     Alpine.store('bag', {
         open: false,
         saving: false,
@@ -1147,8 +1469,7 @@ function initPriceChecker() {
 
         resetSelect(repair, 'Select your repair…', false);
         selected.r.forEach((item, index) => {
-            const label = item.e ? `${item.e} ${item.n}` : item.n;
-            repair.add(new Option(label, String(index)));
+            repair.add(new Option(item.n, String(index)));
         });
     });
 
@@ -1168,9 +1489,9 @@ function initPriceChecker() {
 
         const turnaround = selectedRepair.t || 'Same day';
         const warranty = selectedRepair.w || 12;
-        const repairLabel = selectedRepair.e
-            ? `${selectedRepair.e} ${selectedRepair.n}`
-            : selectedRepair.n;
+        const icon = selectedRepair.ic
+            ? `<i class="bi ${selectedRepair.ic} mr-1" aria-hidden="true"></i>`
+            : '';
 
         out.className = 'pc-out is-live mt-4';
         out.innerHTML = `
@@ -1180,7 +1501,7 @@ function initPriceChecker() {
                     <span class="font-display text-3xl font-bold text-accent">${selectedRepair.p}</span>
                 </span>
                 <span class="text-right text-sm font-medium text-steel">
-                    ${repairLabel}<br>
+                    ${icon}${selectedRepair.n}<br>
                     ${turnaround} · ${warranty}-month warranty
                 </span>
             </div>

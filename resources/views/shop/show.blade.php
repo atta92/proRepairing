@@ -147,6 +147,18 @@
                             {{ $product->name }}
                         </h1>
 
+                        @if ($product->vendor)
+                            <p class="mt-2 text-sm text-steel">
+                                Sold by
+                                <a href="{{ route('shops.show', $product->vendor) }}" class="font-semibold text-ink underline-offset-2 hover:text-accent hover:underline">
+                                    {{ $product->vendor->name }}
+                                </a>
+                                @if ($product->vendor->is_platform)
+                                    <span class="ml-1 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-accent-dark">Official</span>
+                                @endif
+                            </p>
+                        @endif
+
                         @include('partials.product-rating', [
                             'average' => $averageRating,
                             'count' => $reviewsCount,
@@ -310,8 +322,8 @@
                             <li class="flex gap-3 px-4 py-3.5 text-sm text-ink">
                                 <i class="bi bi-truck mt-0.5 text-lg text-accent" aria-hidden="true"></i>
                                 <div>
-                                    <p class="font-semibold">UK delivery or free collection</p>
-                                    <p class="mt-0.5 text-steel">Tracked post or pick up in store.</p>
+                                    <p class="font-semibold">UK delivery</p>
+                                    <p class="mt-0.5 text-steel">Tracked post - £3.99 at checkout.</p>
                                 </div>
                             </li>
                             <li class="flex gap-3 px-4 py-3.5 text-sm text-ink">

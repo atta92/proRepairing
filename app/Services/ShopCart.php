@@ -100,13 +100,14 @@ class ShopCart
         }
 
         $variants = AccessoryVariant::query()
-            ->with('accessory')
+            ->with(['accessory.vendor'])
             ->whereIn('id', $variantIds)
             ->where('is_active', true)
             ->get()
             ->keyBy('id');
 
         $products = Accessory::query()
+            ->with('vendor')
             ->active()
             ->whereIn('id', $accessoryIds)
             ->get()
@@ -129,6 +130,8 @@ class ShopCart
                         'key' => $key,
                         'product' => $product,
                         'variant' => $variant,
+                        'vendor' => $product->vendor,
+                        'vendor_id' => $product->vendor_id,
                         'name' => $variant->displayName($product),
                         'options_label' => $variant->optionsLabel(),
                         'price' => $price,
@@ -153,6 +156,8 @@ class ShopCart
                         'key' => $key,
                         'product' => $product,
                         'variant' => null,
+                        'vendor' => $product->vendor,
+                        'vendor_id' => $product->vendor_id,
                         'name' => $product->name,
                         'options_label' => '',
                         'price' => $price,

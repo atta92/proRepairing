@@ -10,7 +10,7 @@
     <section class="site-grid-bg bg-ink py-10 text-white">
         <div class="site-container">
             <h1 class="font-display text-3xl font-bold tracking-tight sm:text-4xl">Checkout</h1>
-            <p class="mt-2 text-white/70">Pay online or collect and pay in store.</p>
+            <p class="mt-2 text-white/70">UK delivery · pay securely online with Stripe.</p>
         </div>
     </section>
 
@@ -20,7 +20,7 @@
             subtotal: {{ json_encode((float) $totals['subtotal']) }},
             shipping: {{ json_encode((float) $totals['shipping_amount']) }},
             discount: {{ json_encode((float) ($totals['discount_amount'] ?? 0)) }},
-            fulfilment: @js(old('fulfilment', 'collection')),
+            fulfilment: 'delivery',
             coupon: @js($totals['coupon'] ?? null),
             applyUrl: @js(route('shop.checkout.coupon.apply')),
             removeUrl: @js(route('shop.checkout.coupon.remove')),
@@ -72,24 +72,14 @@
                         </div>
 
                         <div class="rounded-2xl border border-mist bg-white p-5 sm:p-6">
-                            <h2 class="font-display text-xl font-semibold text-ink">Fulfilment</h2>
-                            <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                                <label class="cursor-pointer rounded-xl border-2 border-mist p-4 has-[:checked]:border-accent has-[:checked]:bg-accent/5">
-                                    <input type="radio" name="fulfilment" value="collection" class="sr-only" {{ old('fulfilment', 'collection') === 'collection' ? 'checked' : '' }} data-fulfilment @change="syncTotals()">
-                                    <p class="font-semibold text-ink">Collection</p>
-                                    <p class="mt-1 text-sm text-steel">Pick up in store - free.</p>
-                                </label>
-                                <label class="cursor-pointer rounded-xl border-2 border-mist p-4 has-[:checked]:border-accent has-[:checked]:bg-accent/5">
-                                    <input type="radio" name="fulfilment" value="delivery" class="sr-only" {{ old('fulfilment') === 'delivery' ? 'checked' : '' }} data-fulfilment @change="syncTotals()">
-                                    <p class="font-semibold text-ink">UK delivery</p>
-                                    <p class="mt-1 text-sm text-steel">Tracked post - £3.99.</p>
-                                </label>
-                            </div>
+                            <h2 class="font-display text-xl font-semibold text-ink">Delivery address</h2>
+                            <p class="mt-1 text-sm text-steel">UK tracked delivery - £3.99.</p>
+                            <input type="hidden" name="fulfilment" value="delivery">
 
-                            <div class="mt-4 grid gap-4 sm:grid-cols-2" x-show="fulfilment === 'delivery'" x-cloak>
+                            <div class="mt-4 grid gap-4 sm:grid-cols-2">
                                 <label class="block sm:col-span-2">
                                     <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Address line 1</span>
-                                    <input type="text" name="address_line_1" value="{{ old('address_line_1', $customer?->address_line_1) }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                    <input type="text" name="address_line_1" value="{{ old('address_line_1', $customer?->address_line_1) }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                                 </label>
                                 <label class="block sm:col-span-2">
                                     <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Address line 2</span>
@@ -97,41 +87,40 @@
                                 </label>
                                 <label class="block">
                                     <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">City</span>
-                                    <input type="text" name="city" value="{{ old('city', $customer?->city) }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                    <input type="text" name="city" value="{{ old('city', $customer?->city) }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                                 </label>
                                 <label class="block">
                                     <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Postcode</span>
-                                    <input type="text" name="postcode" value="{{ old('postcode', $customer?->postcode) }}" class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
+                                    <input type="text" name="postcode" value="{{ old('postcode', $customer?->postcode) }}" required class="w-full rounded-lg border border-mist px-3 py-2.5 text-sm">
                                 </label>
                             </div>
                         </div>
 
                         <div class="rounded-2xl border border-mist bg-white p-5 sm:p-6">
                             <h2 class="font-display text-xl font-semibold text-ink">Payment</h2>
-                            <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                                <label class="cursor-pointer rounded-xl border-2 border-mist p-4 has-[:checked]:border-accent has-[:checked]:bg-accent/5 {{ empty($stripeConfigured) ? 'opacity-50' : '' }}">
-                                    <input
-                                        type="radio"
-                                        name="payment_method"
-                                        value="card"
-                                        class="sr-only"
-                                        {{ old('payment_method', $stripeConfigured ? 'card' : 'store') === 'card' ? 'checked' : '' }}
-                                        {{ empty($stripeConfigured) ? 'disabled' : '' }}
-                                    >
-                                    <p class="font-semibold text-ink">Pay online with Stripe</p>
-                                    <p class="mt-1 text-sm text-steel">
-                                        @if (! empty($stripeConfigured))
-                                            You’ll be redirected to Stripe’s secure checkout, then returned here.
-                                        @else
-                                            Online payments are not configured yet.
-                                        @endif
+                            <input type="hidden" name="payment_method" value="card">
+                            <div class="mt-4 rounded-xl border-2 border-accent bg-accent/5 p-4 {{ empty($stripeConfigured) ? 'opacity-60' : '' }}" aria-current="true">
+                                <div class="flex flex-wrap items-center justify-between gap-3">
+                                    <p class="font-semibold text-ink">
+                                        <span class="inline-flex items-center gap-2">
+                                            <i class="bi bi-check-circle-fill text-accent" aria-hidden="true"></i>
+                                            Pay online
+                                        </span>
                                     </p>
-                                </label>
-                                <label class="cursor-pointer rounded-xl border-2 border-mist p-4 has-[:checked]:border-accent has-[:checked]:bg-accent/5">
-                                    <input type="radio" name="payment_method" value="store" class="sr-only" {{ old('payment_method', $stripeConfigured ? 'card' : 'store') === 'store' ? 'checked' : '' }}>
-                                    <p class="font-semibold text-ink">Pay in store</p>
-                                    <p class="mt-1 text-sm text-steel">Pay when you collect.</p>
-                                </label>
+                                    <div class="flex items-center gap-2.5 text-[1.65rem] leading-none text-steel" aria-label="Accepted cards">
+                                        <i class="fa-brands fa-cc-visa" title="Visa" aria-hidden="true"></i>
+                                        <i class="fa-brands fa-cc-mastercard" title="Mastercard" aria-hidden="true"></i>
+                                        <i class="fa-brands fa-cc-amex" title="American Express" aria-hidden="true"></i>
+                                        <i class="fa-brands fa-cc-discover" title="Discover" aria-hidden="true"></i>
+                                    </div>
+                                </div>
+                                <p class="mt-2 text-sm text-steel">
+                                    @if (! empty($stripeConfigured))
+                                        You’ll be redirected to a secure checkout, then returned here.
+                                    @else
+                                        Online payments are not configured yet. Please contact us to complete your order.
+                                    @endif
+                                </p>
                             </div>
                             <label class="mt-4 block">
                                 <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-steel">Order notes (optional)</span>
@@ -220,10 +209,14 @@
                                 :class="{ 'btn-loading pointer-events-none': submitting }"
                             >
                                 <span class="btn-spinner" :class="submitting ? '' : 'hidden'"></span>
-                                <span x-text="submitting ? 'Processing…' : 'Place order'"></span>
+                                <span class="inline-flex items-center justify-center gap-2" x-show="!submitting">
+                                    <i class="bi bi-lock-fill text-sm" aria-hidden="true"></i>
+                                    Pay now
+                                </span>
+                                <span x-show="submitting" x-cloak>Processing…</span>
                             </button>
-                            <p class="mt-3 text-center text-xs text-steel/80">
-                                Choosing Stripe opens Stripe’s payment page in a secure redirect.
+                            <p class="mt-3 text-center text-xs font-medium text-accent">
+                                You’ll be taken to a secure payment page to complete your order.
                             </p>
                         </div>
                     </aside>

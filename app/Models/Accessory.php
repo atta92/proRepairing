@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Accessory extends Model
 {
     protected $fillable = [
+        'vendor_id',
         'name',
         'page_title',
         'slug',
@@ -115,9 +117,21 @@ class Accessory extends Model
         return $path ? asset('storage/'.$path) : null;
     }
 
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class);
+    }
+
     public function variants(): HasMany
     {
         return $this->hasMany(AccessoryVariant::class)->orderBy('sort_order');
+    }
+
+    public function scopeForVendor(Builder $query, int|Vendor $vendor): Builder
+    {
+        $id = $vendor instanceof Vendor ? $vendor->id : $vendor;
+
+        return $query->where('vendor_id', $id);
     }
 
     public function activeVariants(): HasMany

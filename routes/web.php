@@ -15,10 +15,13 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\RobotsController;
+use App\Http\Controllers\Seller\DashboardRedirectController as SellerHomeController;
+use App\Http\Controllers\Seller\RegisterController as SellerRegisterController;
 use App\Http\Controllers\ShopCartController;
 use App\Http\Controllers\ShopCheckoutController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\VendorShopController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -36,6 +39,13 @@ Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{post:slug}', [BlogController::class, 'show'])->name('blog.show');
 
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
+Route::get('/shops/{vendor:slug}', [VendorShopController::class, 'show'])->name('shops.show');
+
+Route::get('/seller/register', [SellerRegisterController::class, 'create'])->name('seller.register');
+Route::post('/seller/register', [SellerRegisterController::class, 'store'])->name('seller.register.store');
+Route::get('/seller/home', SellerHomeController::class)
+    ->middleware('auth')
+    ->name('seller.home');
 
 // Guest-friendly cart & checkout (account optional).
 Route::get('/shop/cart', [ShopCartController::class, 'show'])->name('shop.cart');

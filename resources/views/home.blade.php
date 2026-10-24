@@ -168,8 +168,50 @@
     </section>
 
     {{-- Shop --}}
-    @if ($accessories->isNotEmpty())
-        <section id="shop" class="{{ $homeBg++ % 2 === 0 ? 'site-emoji-bg' : 'site-grid-bg-soft' }} scroll-mt-24 bg-snow py-16 sm:py-20">
+    @if ($shopVendors->isNotEmpty())
+        <section
+            id="shop"
+            class="{{ $homeBg++ % 2 === 0 ? 'site-emoji-bg' : 'site-grid-bg-soft' }} scroll-mt-24 bg-snow py-16 sm:py-20"
+            x-data="{
+                shopVendorId: {{ (int) $defaultShopVendorId }},
+                sellerCanPrev: false,
+                sellerCanNext: false,
+                syncSellerScroll() {
+                    const track = this.$refs.sellerTabs;
+                    if (!track) {
+                        this.sellerCanPrev = false;
+                        this.sellerCanNext = false;
+                        return;
+                    }
+                    const max = track.scrollWidth - track.clientWidth;
+                    this.sellerCanPrev = track.scrollLeft > 4;
+                    this.sellerCanNext = max > 4 && track.scrollLeft < max - 4;
+                },
+                scrollSellers(direction) {
+                    const track = this.$refs.sellerTabs;
+                    if (!track) return;
+                    const amount = Math.max(track.clientWidth * 0.65, 160);
+                    track.scrollBy({ left: direction * amount, behavior: 'smooth' });
+                },
+                selectSeller(id) {
+                    this.shopVendorId = id;
+                    this.$nextTick(() => {
+                        const track = this.$refs.sellerTabs;
+                        const active = track?.querySelector('.is-active');
+                        active?.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+                        this.syncSellerScroll();
+                    });
+                },
+                init() {
+                    const sync = () => this.syncSellerScroll();
+                    this.$nextTick(sync);
+                    // Parent home skeleton delays visibility — re-measure after it opens.
+                    setTimeout(sync, 300);
+                    setTimeout(sync, 600);
+                    window.addEventListener('resize', sync);
+                },
+            }"
+        >
             <div class="site-container">
                 <div class="flex flex-wrap items-end justify-between gap-4">
                     <div class="max-w-2xl">
@@ -185,9 +227,105 @@
                     </a>
                 </div>
 
-                <div class="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
-                    @foreach ($accessories as $accessory)
-                        @include('shop._card', ['product' => $accessory])
+                @if ($shopVendors->count() > 1)
+                    <div class="shop-seller-bar mt-8">
+                        <p class="shop-filter-label">Seller</p>
+                        <div
+                            class="shop-seller-scroller"
+                            :class="{ 'has-left': sellerCanPrev, 'has-right': sellerCanNext }"
+                        >
+                            <span class="shop-seller-scroller__fade is-left" aria-hidden="true"></span>
+                            <span class="shop-seller-scroller__fade is-right" aria-hidden="true"></span>
+
+                            <button
+                                type="button"
+                                class="shop-seller-scroller__btn is-prev"
+                                :disabled="!sellerCanPrev"
+                                @click="scrollSellers(-1)"
+                                aria-label="Previous sellers"
+                                data-no-spinner
+                            >
+                                <i class="bi bi-chevron-left text-sm" aria-hidden="true"></i>
+                            </button>
+                            <button
+                                type="button"
+                                class="shop-seller-scroller__btn is-next"
+                                :disabled="!sellerCanNext"
+                                @click="scrollSellers(1)"
+                                aria-label="Next sellers"
+                                data-no-spinner
+                            >
+                                <i class="bi bi-chevron-right text-sm" aria-hidden="true"></i>
+                            </button>
+
+                            <div
+                                class="shop-seller-tabs px-1"
+                                role="tablist"
+                                aria-label="Shop sellers"
+                                x-ref="sellerTabs"
+                                @scroll.passive="syncSellerScroll()"
+                            >
+                                @foreach ($shopVendors as $vendor)
+                                    <button
+                                        type="button"
+                                        role="tab"
+                                        class="shop-seller-chip"
+                                        :class="shopVendorId === {{ $vendor->id }} ? 'is-active' : ''"
+                                        :aria-selected="shopVendorId === {{ $vendor->id }} ? 'true' : 'false'"
+                                        @click="selectSeller({{ $vendor->id }})"
+                                        data-no-spinner
+                                    >
+                                        @if ($vendor->is_platform)
+                                            <span class="shop-seller-chip__icon" aria-hidden="true">
+                                                <i class="bi bi-shop"></i>
+                                            </span>
+                                            <span>{{ $vendor->name }}</span>
+                                            <span class="shop-seller-chip__badge">Own</span>
+                                        @else
+                                            @if ($vendor->logoUrl())
+                                                <img src="{{ $vendor->logoUrl() }}" alt="" class="shop-seller-chip__logo">
+                                            @else
+                                                <span class="shop-seller-chip__icon is-muted" aria-hidden="true">
+                                                    <i class="bi bi-bag"></i>
+                                                </span>
+                                            @endif
+                                            <span>{{ $vendor->name }}</span>
+                                        @endif
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                <div class="mt-8">
+                    @foreach ($shopVendors as $vendor)
+                        <div
+                            x-show="shopVendorId === {{ $vendor->id }}"
+                            @unless ($loop->first) x-cloak x-transition.opacity.duration.200ms @endunless
+                            role="tabpanel"
+                        >
+                            <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+                                <p class="text-sm text-steel">
+                                    @if ($vendor->is_platform)
+                                        From our own shop
+                                    @else
+                                        Sold by <span class="font-semibold text-ink">{{ $vendor->name }}</span>
+                                    @endif
+                                </p>
+                                @if (! $vendor->is_platform)
+                                    <a href="{{ route('shops.show', $vendor) }}" class="text-sm font-semibold text-accent hover:text-accent-dark">
+                                        Visit shop →
+                                    </a>
+                                @endif
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
+                                @foreach ($shopVendorProducts[$vendor->id] as $accessory)
+                                    @include('shop._card', ['product' => $accessory])
+                                @endforeach
+                            </div>
+                        </div>
                     @endforeach
                 </div>
             </div>
@@ -223,24 +361,6 @@
                     </li>
                 @endforeach
             </ol>
-        </div>
-    </section>
-
-    {{-- Trust strip --}}
-    <section class="border-y border-mist bg-white py-12">
-        <div class="site-container grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            @foreach ([
-                ['icon' => 'bi-lightning-charge-fill', 'title' => 'Same-day', 'text' => 'Most screens & batteries while you wait'],
-                ['icon' => 'bi-shield-check', 'title' => '12-month warranty', 'text' => 'On parts and workmanship'],
-                ['icon' => 'bi-box-seam', 'title' => 'Free UK mail-in', 'text' => 'Tracked return delivery included'],
-                ['icon' => 'bi-check-circle-fill', 'title' => 'No fix, no fee', 'text' => 'If we cannot repair it, you pay nothing'],
-            ] as $item)
-                <div class="text-center lg:text-left">
-                    <i class="bi {{ $item['icon'] }} text-2xl text-accent" aria-hidden="true"></i>
-                    <p class="mt-2 font-display text-lg font-semibold text-ink">{{ $item['title'] }}</p>
-                    <p class="mt-1 text-sm text-steel">{{ $item['text'] }}</p>
-                </div>
-            @endforeach
         </div>
     </section>
 
@@ -385,6 +505,80 @@
 
         </section>
     @endif
+
+    {{-- Sell with us --}}
+    <section id="sell-with-us" class="{{ $homeBg++ % 2 === 0 ? 'site-emoji-bg' : 'site-grid-bg-soft' }} scroll-mt-24 bg-snow py-16 sm:py-20">
+        <div class="site-container">
+            <div class="overflow-hidden rounded-2xl border border-mist bg-white shadow-sm">
+                <div class="grid lg:grid-cols-[1.4fr_1fr]">
+                    <div class="border-b border-mist p-6 sm:p-8 lg:border-b-0 lg:border-r lg:border-mist lg:p-10 xl:p-12">
+                        <p class="text-sm font-semibold uppercase tracking-wider text-accent">Partners</p>
+                        <h2 class="mt-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+                            Want to sell with us?
+                        </h2>
+                        <p class="mt-3 max-w-xl text-base leading-relaxed text-steel">
+                            List accessories, phones and tablets on our marketplace. Reach customers already shopping for repairs and parts — with your own seller dashboard for products and orders.
+                        </p>
+
+                        <ul class="mt-7 grid gap-3 sm:grid-cols-3">
+                            <li class="flex gap-3 rounded-xl border border-mist bg-snow/80 p-3.5">
+                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                                    <i class="bi bi-shop-window text-lg" aria-hidden="true"></i>
+                                </span>
+                                <div>
+                                    <p class="font-display text-sm font-semibold text-ink">Your shop</p>
+                                    <p class="mt-0.5 text-xs leading-snug text-steel">Branded storefront on our site</p>
+                                </div>
+                            </li>
+                            <li class="flex gap-3 rounded-xl border border-mist bg-snow/80 p-3.5">
+                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                                    <i class="bi bi-box-seam text-lg" aria-hidden="true"></i>
+                                </span>
+                                <div>
+                                    <p class="font-display text-sm font-semibold text-ink">Easy listings</p>
+                                    <p class="mt-0.5 text-xs leading-snug text-steel">Add products and manage stock</p>
+                                </div>
+                            </li>
+                            <li class="flex gap-3 rounded-xl border border-mist bg-snow/80 p-3.5">
+                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                                    <i class="bi bi-receipt text-lg" aria-hidden="true"></i>
+                                </span>
+                                <div>
+                                    <p class="font-display text-sm font-semibold text-ink">Order tools</p>
+                                    <p class="mt-0.5 text-xs leading-snug text-steel">Fulfil and track sales in one place</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="flex flex-col justify-center gap-5 bg-ink p-6 text-white sm:p-8 lg:p-10 xl:p-12">
+                        <div>
+                            <p class="text-sm font-semibold uppercase tracking-wider text-accent-light">Get started</p>
+                            <p class="mt-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">
+                                Apply in minutes
+                            </p>
+                            <p class="mt-2 text-sm leading-relaxed text-white/70">
+                                Register your shop. We’ll review your application and email you when you’re approved to sell.
+                            </p>
+                        </div>
+
+                        <div class="flex flex-col gap-3 sm:flex-row lg:flex-col">
+                            <a href="{{ route('seller.register') }}" class="btn-primary w-full sm:w-auto lg:w-full">
+                                Become a seller
+                            </a>
+                            <a href="{{ route('shop.index', ['seller' => 'all']) }}" class="btn-secondary w-full sm:w-auto lg:w-full">
+                                Browse marketplace
+                            </a>
+                        </div>
+
+                        <p class="text-xs leading-relaxed text-white/50">
+                            Third-party sales include a platform commission. You’ll see the rate before you list.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     {{-- Contact CTA --}}
     <section id="contact" class="{{ $homeBg++ % 2 === 0 ? 'site-emoji-bg' : 'site-grid-bg' }} scroll-mt-24 bg-ink py-16 text-white sm:py-20">

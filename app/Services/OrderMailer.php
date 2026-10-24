@@ -4,12 +4,15 @@ namespace App\Services;
 
 use App\Mail\RepairOrderPaidAdminMail;
 use App\Mail\RepairOrderPaidCustomerMail;
+use App\Mail\ShopOrderFulfilmentUpdatedCustomerMail;
 use App\Mail\ShopOrderPaidAdminMail;
 use App\Mail\ShopOrderPaidCustomerMail;
 use App\Models\Order;
 use App\Models\ShopOrder;
+use App\Models\ShopOrderItem;
 use App\Models\SiteSetting;
 use App\Models\User;
+use App\Models\Vendor;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -41,6 +44,28 @@ class OrderMailer
         foreach ($this->adminEmails() as $adminEmail) {
             $this->safeSend($adminEmail, new RepairOrderPaidAdminMail($order));
         }
+    }
+
+    /**
+     * @param  list<array{item: ShopOrderItem, from: string, to: string}>  $changes
+     */
+    public function shopOrderFulfilmentUpdated(ShopOrder $order, array $changes, ?Vendor $vendor = null): void
+    {
+        if ($changes === []) {
+            return;
+        }
+
+        $order->loadMissing('customer');
+
+        $customerEmail = $order->customer?->email;
+        if (! filled($customerEmail)) {
+            return;
+        }
+
+        $this->safeSend(
+            $customerEmail,
+            new ShopOrderFulfilmentUpdatedCustomerMail($order, $changes, $vendor)
+        );
     }
 
     /**

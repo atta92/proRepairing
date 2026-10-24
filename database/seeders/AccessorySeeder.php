@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Accessory;
 use App\Models\AccessoryVariant;
+use App\Models\Vendor;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -455,6 +456,8 @@ class AccessorySeeder extends Seeder
             ],
         ];
 
+        $platformId = Vendor::platform()?->id;
+
         foreach ($items as $item) {
             $variants = $item['variants'] ?? [];
             unset($item['variants']);
@@ -462,6 +465,7 @@ class AccessorySeeder extends Seeder
             $product = Accessory::query()->updateOrCreate(
                 ['slug' => Str::slug($item['name'])],
                 [
+                    'vendor_id' => $platformId,
                     'name' => $item['name'],
                     'type' => $item['type'],
                     'category' => $item['category'],

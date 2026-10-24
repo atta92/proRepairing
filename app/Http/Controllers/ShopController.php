@@ -4,53 +4,208 @@ namespace App\Http\Controllers;
 
 use App\Models\Accessory;
 use App\Models\ProductReview;
+use App\Models\Vendor;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class ShopController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
     {
-        $type = $request->string('type')->toString();
-        $category = $request->string('category')->toString();
+        $catalog = $this->buildCatalog($request);
+
+        if ($request->wantsJson() || $request->ajax() || $request->boolean('ajax')) {
+            return response()->json([
+                'seller' => $catalog['activeSellerSlug'],
+                'selectedTypes' => $catalog['selectedTypes'],
+                'selectedCategories' => $catalog['selectedCategories'],
+                'total' => $catalog['products']->total(),
+                'title' => $catalog['title'],
+                'types' => $this->optionsForJson($catalog['types']),
+                'categories' => $this->optionsForJson($catalog['categories']),
+                'html' => view('shop._results', [
+                    'products' => $catalog['products'],
+                ])->render(),
+            ]);
+        }
+
+        return view('shop.index', [
+            'products' => $catalog['products'],
+            'types' => $catalog['types'],
+            'categories' => $catalog['categories'],
+            'selectedTypes' => $catalog['selectedTypes'],
+            'selectedCategories' => $catalog['selectedCategories'],
+            'shopVendors' => $catalog['shopVendors'],
+            'selectedVendor' => $catalog['selectedVendor'],
+            'activeSellerSlug' => $catalog['activeSellerSlug'],
+            'sellerAll' => $catalog['sellerAll'],
+            'platformSellerSlug' => $catalog['platformSellerSlug'],
+            'title' => $catalog['title'],
+        ]);
+    }
+
+    /**
+     * @return array{
+     *     shopVendors: Collection<int, Vendor>,
+     *     selectedVendor: ?Vendor,
+     *     sellerAll: bool,
+     *     activeSellerSlug: string,
+     *     platformSellerSlug: ?string,
+     *     selectedTypes: list<string>,
+     *     selectedCategories: list<string>,
+     *     types: Collection<string, string>,
+     *     categories: Collection<string, string>,
+     *     products: \Illuminate\Contracts\Pagination\LengthAwarePaginator,
+     *     title: string
+     * }
+     */
+    private function buildCatalog(Request $request): array
+    {
+        $sellerSlug = $request->string('seller')->toString();
+        $selectedTypes = $this->selectedSlugs($request, 'type', Accessory::TYPES);
+        $selectedCategories = $this->selectedSlugs($request, 'category', Accessory::CATEGORIES);
+
+        $shopVendors = Vendor::query()
+            ->activeOnStorefront()
+            ->whereHas('accessories', fn ($query) => $query->active())
+            ->orderedForStorefront()
+            ->get();
+
+        $platformVendor = $shopVendors->firstWhere('is_platform', true);
+        $platformSellerSlug = $platformVendor?->slug;
+        $defaultSellerSlug = $platformSellerSlug ?? $shopVendors->first()?->slug;
+
+        $selectedVendor = null;
+        $sellerAll = $sellerSlug === 'all';
+
+        if (! $sellerAll) {
+            if ($sellerSlug === '') {
+                $selectedVendor = $platformVendor ?? $shopVendors->first();
+            } else {
+                $selectedVendor = $shopVendors->firstWhere('slug', $sellerSlug);
+            }
+
+            if (! $selectedVendor && $sellerSlug !== '') {
+                $selectedVendor = $platformVendor ?? $shopVendors->first();
+            }
+        }
+
+        $activeSellerSlug = $sellerAll
+            ? 'all'
+            : ($selectedVendor?->slug ?? (string) $defaultSellerSlug);
 
         $products = Accessory::query()
             ->active()
-            ->with('activeVariants')
+            ->with(['activeVariants', 'vendor'])
             ->withCount('approvedReviews')
             ->withAvg('approvedReviews', 'rating')
             ->when(
-                $type !== '' && array_key_exists($type, Accessory::TYPES),
-                fn ($query) => $query->where('type', $type)
+                $selectedVendor,
+                fn ($query) => $query->forVendor($selectedVendor)
             )
             ->when(
-                $category !== '' && array_key_exists($category, Accessory::CATEGORIES),
-                fn ($query) => $query->where('category', $category)
+                $selectedTypes !== [],
+                fn ($query) => $query->whereIn('type', $selectedTypes)
             )
+            ->when(
+                $selectedCategories !== [],
+                fn ($query) => $query->whereIn('category', $selectedCategories)
+            )
+            ->orderByDesc('is_featured')
             ->orderBy('sort_order')
             ->orderBy('name')
-            ->paginate(12)
+            ->paginate(8)
             ->withQueryString();
 
-        return view('shop.index', [
+        $filterBase = Accessory::query()
+            ->active()
+            ->when($selectedVendor, fn ($query) => $query->forVendor($selectedVendor));
+
+        $types = (clone $filterBase)
+            ->select('type')
+            ->distinct()
+            ->pluck('type')
+            ->filter(fn ($slug) => array_key_exists($slug, Accessory::TYPES))
+            ->mapWithKeys(fn ($slug) => [$slug => Accessory::TYPES[$slug]]);
+
+        $categories = (clone $filterBase)
+            ->select('category')
+            ->distinct()
+            ->pluck('category')
+            ->filter(fn ($slug) => filled($slug) && array_key_exists($slug, Accessory::CATEGORIES))
+            ->mapWithKeys(fn ($slug) => [$slug => Accessory::CATEGORIES[$slug]]);
+
+        $title = $sellerAll
+            ? 'All sellers'
+            : ($selectedVendor?->is_platform
+                ? 'Our own shop'
+                : ($selectedVendor?->name ?? 'Shop'));
+
+        return [
+            'shopVendors' => $shopVendors,
+            'selectedVendor' => $selectedVendor,
+            'sellerAll' => $sellerAll,
+            'activeSellerSlug' => $activeSellerSlug,
+            'platformSellerSlug' => $platformSellerSlug,
+            'selectedTypes' => $selectedTypes,
+            'selectedCategories' => $selectedCategories,
+            'types' => $types,
+            'categories' => $categories,
             'products' => $products,
-            'types' => Accessory::TYPES,
-            'categories' => Accessory::CATEGORIES,
-            'type' => $type,
-            'category' => $category,
-        ]);
+            'title' => $title,
+        ];
+    }
+
+    /**
+     * @param  array<string, string>  $allowed
+     * @return list<string>
+     */
+    private function selectedSlugs(Request $request, string $key, array $allowed): array
+    {
+        $raw = $request->input($key, []);
+
+        if (is_string($raw)) {
+            $raw = $raw === ''
+                ? []
+                : (preg_split('/\s*,\s*/', $raw) ?: []);
+        }
+
+        if (! is_array($raw)) {
+            $raw = [];
+        }
+
+        return collect($raw)
+            ->map(fn ($value) => trim((string) $value))
+            ->filter(fn (string $value) => $value !== '' && array_key_exists($value, $allowed))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  Collection<string, string>  $options
+     * @return list<array{slug: string, label: string}>
+     */
+    private function optionsForJson(Collection $options): array
+    {
+        return $options
+            ->map(fn (string $label, string $slug) => ['slug' => $slug, 'label' => $label])
+            ->values()
+            ->all();
     }
 
     public function show(Accessory $accessory): View
     {
         abort_unless($accessory->is_active, 404);
 
-        $accessory->load(['activeVariants', 'approvedReviews']);
+        $accessory->load(['activeVariants', 'approvedReviews', 'vendor']);
 
         $related = Accessory::query()
             ->active()
-            ->with('activeVariants')
+            ->with(['activeVariants', 'vendor'])
             ->withCount('approvedReviews')
             ->withAvg('approvedReviews', 'rating')
             ->where('id', '!=', $accessory->id)

@@ -22,6 +22,9 @@
     --color-signal-dark: #c2410c;
 
     --max-width-site: 90rem;
+
+    /* Primary nav collapses below this width (hamburger instead of desktop links). */
+    --breakpoint-nav: 1390px;
 }
 
 @layer base {
@@ -49,6 +52,101 @@
 @layer components {
     .site-container {
         @apply mx-auto w-full max-w-site px-4 sm:px-5 lg:px-6 xl:px-8;
+    }
+
+    .shop-seller-tabs {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-behavior: smooth;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .shop-seller-tabs::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none;
+    }
+
+    .shop-seller-scroller {
+        position: relative;
+    }
+
+    .shop-seller-scroller__fade {
+        pointer-events: none;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        z-index: 1;
+        width: 2.25rem;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .shop-seller-scroller__fade.is-left {
+        left: 0;
+        background: linear-gradient(to right, #fff 20%, transparent);
+    }
+
+    .shop-seller-scroller__fade.is-right {
+        right: 0;
+        background: linear-gradient(to left, #fff 20%, transparent);
+    }
+
+    .shop-seller-scroller.has-left .shop-seller-scroller__fade.is-left,
+    .shop-seller-scroller.has-right .shop-seller-scroller__fade.is-right {
+        opacity: 1;
+    }
+
+    .shop-seller-scroller.has-left .shop-seller-tabs {
+        padding-left: 2.15rem;
+    }
+
+    .shop-seller-scroller.has-right .shop-seller-tabs {
+        padding-right: 2.15rem;
+    }
+
+    .shop-seller-scroller__btn {
+        position: absolute;
+        top: 50%;
+        z-index: 2;
+        display: inline-flex;
+        height: 2rem;
+        width: 2rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        border: 1px solid var(--color-mist);
+        background: #fff;
+        color: var(--color-ink);
+        box-shadow: 0 4px 12px rgb(15 23 32 / 0.12);
+        transform: translateY(-50%);
+        transition:
+            opacity 0.15s ease,
+            border-color 0.15s ease,
+            color 0.15s ease;
+    }
+
+    .shop-seller-scroller__btn:hover {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
+    }
+
+    .shop-seller-scroller__btn:disabled {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .shop-seller-scroller__btn.is-prev {
+        left: 0.15rem;
+    }
+
+    .shop-seller-scroller__btn.is-next {
+        right: 0.15rem;
     }
 
     .site-grid-bg,
@@ -130,6 +228,59 @@
     .site-emoji-bg > * {
         position: relative;
         z-index: 1;
+    }
+
+    .floating-action-rail {
+        position: fixed;
+        right: 1.25rem;
+        bottom: 1.25rem;
+        z-index: 70;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.625rem;
+    }
+
+    .floating-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 9999px;
+        box-shadow: 0 10px 25px rgb(15 23 32 / 0.18);
+        transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .floating-action:hover {
+        transform: scale(1.05);
+    }
+
+    .floating-action-whatsapp {
+        background-color: #25d366;
+        color: #fff;
+    }
+
+    .floating-action-whatsapp:hover {
+        background-color: #20bd5a;
+    }
+
+    .floating-action-top {
+        border: 1px solid var(--color-mist);
+        background-color: #fff;
+        color: var(--color-ink);
+    }
+
+    .floating-action-top:hover {
+        border-color: var(--color-accent);
+        color: var(--color-accent);
+    }
+
+    @media (min-width: 640px) {
+        .floating-action-rail {
+            right: 1.5rem;
+            bottom: 1.5rem;
+        }
     }
 
     .btn-primary {
@@ -297,6 +448,288 @@
         border-color: var(--color-accent-dark);
         background-color: var(--color-accent-dark);
         color: #fff;
+    }
+
+    .shop-filter-label {
+        margin-bottom: 0.65rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: color-mix(in oklab, var(--color-steel) 85%, transparent);
+    }
+
+    .shop-seller-bar {
+        border: 1px solid var(--color-mist);
+        border-radius: 1.25rem;
+        background: #fff;
+        padding: 1rem 1.1rem 1.15rem;
+        box-shadow: 0 1px 2px rgb(15 23 32 / 0.04);
+    }
+
+    .shop-seller-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        flex-shrink: 0;
+        border-radius: 9999px;
+        border: 1px solid var(--color-mist);
+        background: var(--color-snow);
+        padding: 0.45rem 0.85rem 0.45rem 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        line-height: 1.2;
+        color: var(--color-ink);
+        text-decoration: none;
+        transition:
+            border-color 0.15s ease,
+            background-color 0.15s ease,
+            color 0.15s ease,
+            box-shadow 0.15s ease;
+    }
+
+    .shop-seller-chip:hover {
+        border-color: color-mix(in oklab, var(--color-accent) 45%, var(--color-mist));
+        color: var(--color-accent-dark);
+    }
+
+    .shop-seller-chip.is-active {
+        border-color: var(--color-accent);
+        background: var(--color-accent);
+        color: #fff;
+        box-shadow: 0 6px 16px rgb(13 148 136 / 0.22);
+    }
+
+    .shop-seller-chip__icon {
+        display: inline-flex;
+        height: 1.65rem;
+        width: 1.65rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        background: color-mix(in oklab, var(--color-accent) 14%, #fff);
+        color: var(--color-accent);
+        font-size: 0.85rem;
+    }
+
+    .shop-seller-chip.is-active .shop-seller-chip__icon {
+        background: rgb(255 255 255 / 0.2);
+        color: #fff;
+    }
+
+    .shop-seller-chip__icon.is-muted {
+        background: #e8eef3;
+        color: var(--color-steel);
+    }
+
+    .shop-seller-chip.is-active .shop-seller-chip__icon.is-muted {
+        background: rgb(255 255 255 / 0.2);
+        color: #fff;
+    }
+
+    .shop-seller-chip__logo {
+        height: 1.65rem;
+        width: 1.65rem;
+        border-radius: 9999px;
+        object-fit: cover;
+        background: #fff;
+    }
+
+    .shop-seller-chip__badge {
+        border-radius: 9999px;
+        padding: 0.15rem 0.45rem;
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background: color-mix(in oklab, var(--color-accent) 12%, #fff);
+        color: var(--color-accent-dark);
+    }
+
+    .shop-seller-chip.is-active .shop-seller-chip__badge {
+        background: rgb(255 255 255 / 0.22);
+        color: #fff;
+    }
+
+    .shop-filter-trigger {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-radius: 9999px;
+        border: 1px solid var(--color-mist);
+        background: #fff;
+        padding: 0.55rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--color-ink);
+        box-shadow: 0 1px 2px rgb(15 23 32 / 0.05);
+    }
+
+    .shop-filter-trigger__count {
+        display: inline-flex;
+        min-width: 1.25rem;
+        height: 1.25rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        background: var(--color-accent);
+        padding: 0 0.35rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .shop-filter-panel {
+        border: 1px solid var(--color-mist);
+        border-radius: 1.25rem;
+        background: #fff;
+        box-shadow: 0 1px 2px rgb(15 23 32 / 0.04);
+    }
+
+    @media (max-width: 767px) {
+        .shop-filter-panel {
+            position: fixed;
+            inset: auto 0 0 0;
+            z-index: 50;
+            max-height: min(88vh, 40rem);
+            border-radius: 1.25rem 1.25rem 0 0;
+            display: flex;
+            flex-direction: column;
+            transform: translateY(110%);
+            transition: transform 0.28s ease;
+            box-shadow: 0 -12px 40px rgb(15 23 32 / 0.18);
+        }
+
+        .shop-filter-panel.is-open {
+            transform: translateY(0);
+        }
+    }
+
+    @media (min-width: 768px) {
+        .shop-filter-panel {
+            /* Scroll with the page — no sticky jump/stop against the header */
+            position: relative;
+            top: auto;
+            align-self: start;
+        }
+    }
+
+    .shop-filter-panel__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        border-bottom: 1px solid var(--color-mist);
+        padding: 1rem 1.15rem;
+    }
+
+    .shop-filter-panel__body {
+        display: flex;
+        flex-direction: column;
+        gap: 1.35rem;
+        padding: 1.15rem;
+    }
+
+    .shop-filter-panel__footer {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        border-top: 1px solid var(--color-mist);
+        padding: 1rem 1.15rem calc(1rem + env(safe-area-inset-bottom, 0px));
+        background: #fff;
+    }
+
+    .shop-filter-group + .shop-filter-group {
+        padding-top: 1.15rem;
+        border-top: 1px solid var(--color-mist);
+    }
+
+    .shop-filter-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .shop-filter-option {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        border-radius: 0.75rem;
+        padding: 0.55rem 0.65rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--color-steel);
+        text-decoration: none;
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .shop-filter-option:hover {
+        background: var(--color-snow);
+        color: var(--color-ink);
+    }
+
+    .shop-filter-option.is-active {
+        background: color-mix(in oklab, var(--color-accent) 10%, #fff);
+        color: var(--color-accent-dark);
+        font-weight: 600;
+    }
+
+    .shop-filter-option__radio,
+    .shop-filter-option__check {
+        position: relative;
+        display: inline-flex;
+        height: 1.05rem;
+        width: 1.05rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        border: 1.5px solid #94a3b8;
+        background: #fff;
+        color: #fff;
+        font-size: 0.7rem;
+        line-height: 1;
+    }
+
+    .shop-filter-option__radio {
+        border-radius: 9999px;
+    }
+
+    .shop-filter-option__check {
+        border-radius: 0.3rem;
+    }
+
+    .shop-filter-option.is-active .shop-filter-option__radio {
+        border-color: var(--color-accent);
+        background: var(--color-accent);
+        box-shadow: inset 0 0 0 3px #fff;
+    }
+
+    .shop-filter-option.is-active .shop-filter-option__check {
+        border-color: var(--color-accent);
+        background: var(--color-accent);
+    }
+
+    .shop-active-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-radius: 9999px;
+        border: 1px solid color-mix(in oklab, var(--color-accent) 30%, var(--color-mist));
+        background: color-mix(in oklab, var(--color-accent) 8%, #fff);
+        padding: 0.35rem 0.7rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--color-accent-dark);
+        text-decoration: none;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .shop-active-chip:hover {
+        border-color: var(--color-accent);
+        background: color-mix(in oklab, var(--color-accent) 14%, #fff);
     }
 
     .cart-count {

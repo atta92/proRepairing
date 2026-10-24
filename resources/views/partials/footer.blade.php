@@ -37,6 +37,7 @@
             <ul class="mt-4 space-y-2 text-sm text-white/70">
                 <li><a href="{{ route('home') }}#price-checker" class="transition hover:text-white">Price checker</a></li>
                 <li><a href="{{ route('shop.index') }}" class="transition hover:text-white">Shop</a></li>
+                <li><a href="{{ route('seller.register') }}" class="transition hover:text-white">Sell with us</a></li>
                 <li><a href="{{ route('blog.index') }}" class="transition hover:text-white">Blog</a></li>
                 <li><a href="{{ route('pages.about') }}" class="transition hover:text-white">About us</a></li>
                 <li><a href="#" class="transition hover:text-white" data-quote-open>Request a quote</a></li>

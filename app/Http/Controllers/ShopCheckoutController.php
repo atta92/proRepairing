@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\ShopOrder;
 use App\Models\ShopOrderItem;
+use App\Models\Vendor;
 use App\Services\CouponService;
 use App\Services\OrderMailer;
 use App\Services\ShopCart;
 use App\Services\StripeCheckoutService;
+use App\Services\VendorCommission;
 use App\Support\CheckoutCustomer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -24,7 +26,7 @@ class ShopCheckoutController extends Controller
         }
 
         $lines = $cart->lines();
-        $fulfilment = old('fulfilment', 'collection');
+        $fulfilment = 'delivery';
         $totals = $coupons->withDiscount($cart->totals($fulfilment));
         $stripeConfigured = $stripe->isConfigured();
         $user = $request->user();
@@ -41,10 +43,10 @@ class ShopCheckoutController extends Controller
 
         $validated = $request->validate([
             'coupon_code' => ['required', 'string', 'max:50'],
-            'fulfilment' => ['nullable', 'in:collection,delivery'],
+            'fulfilment' => ['nullable', 'in:delivery'],
         ]);
 
-        $fulfilment = $validated['fulfilment'] ?? 'collection';
+        $fulfilment = 'delivery';
         $base = $cart->totals($fulfilment);
 
         try {
@@ -74,11 +76,7 @@ class ShopCheckoutController extends Controller
     public function removeCoupon(Request $request, ShopCart $cart, CouponService $coupons): JsonResponse|RedirectResponse
     {
         $coupons->clear();
-        $fulfilment = $request->input('fulfilment', 'collection');
-        if (! in_array($fulfilment, ['collection', 'delivery'], true)) {
-            $fulfilment = 'collection';
-        }
-
+        $fulfilment = 'delivery';
         $totals = $coupons->withDiscount($cart->totals($fulfilment));
 
         return $this->couponResponse($request, true, 'Coupon removed.', $totals);
@@ -94,38 +92,33 @@ class ShopCheckoutController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:50'],
-            'address_line_1' => ['nullable', 'string', 'max:255'],
+            'address_line_1' => ['required', 'string', 'max:255'],
             'address_line_2' => ['nullable', 'string', 'max:255'],
-            'city' => ['nullable', 'string', 'max:100'],
-            'postcode' => ['nullable', 'string', 'max:20'],
-            'fulfilment' => ['required', 'in:collection,delivery'],
-            'payment_method' => ['required', 'in:card,store'],
+            'city' => ['required', 'string', 'max:100'],
+            'postcode' => ['required', 'string', 'max:20'],
+            'fulfilment' => ['required', 'in:delivery'],
+            'payment_method' => ['required', 'in:card'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        if ($validated['fulfilment'] === 'delivery') {
-            $request->validate([
-                'address_line_1' => ['required', 'string', 'max:255'],
-                'city' => ['required', 'string', 'max:100'],
-                'postcode' => ['required', 'string', 'max:20'],
-            ]);
-        }
+        $validated['fulfilment'] = 'delivery';
+        $validated['payment_method'] = 'card';
 
-        if ($validated['payment_method'] === 'card' && ! $stripe->isConfigured()) {
+        if (! $stripe->isConfigured()) {
             return back()
                 ->withInput()
-                ->with('error', 'Online card payment is not available yet. Please choose pay in store, or ask us to enable Stripe.');
+                ->with('error', 'Online card payment is not available yet. Please try again later or contact us.');
         }
 
-        $totals = $coupons->withDiscount($cart->totals($validated['fulfilment']));
+        $totals = $coupons->withDiscount($cart->totals('delivery'));
         $lines = $cart->lines();
-        $payOnline = $validated['payment_method'] === 'card';
+        $payOnline = true;
         $coupon = $coupons->current();
 
         if ($coupons->currentCode() && (! $coupon || ($totals['discount_amount'] ?? 0) <= 0)) {
             $coupons->clear();
             $coupon = null;
-            $totals = $coupons->withDiscount($cart->totals($validated['fulfilment']));
+            $totals = $coupons->withDiscount($cart->totals('delivery'));
         }
 
         $order = DB::transaction(function () use ($request, $validated, $lines, $totals, $payOnline, $coupon, $coupons) {
@@ -155,11 +148,28 @@ class ShopCheckoutController extends Controller
                 'paid_at' => null,
             ]);
 
-            foreach ($lines as $line) {
+            $platformVendor = Vendor::platform();
+            $commissionLines = VendorCommission::allocate(
+                $lines->map(fn (array $line) => [
+                    'line_total' => (float) $line['line_total'],
+                    'vendor' => $line['vendor'] ?? $line['product']->vendor ?? $platformVendor,
+                ])->all(),
+                (float) ($totals['discount_amount'] ?? 0)
+            );
+
+            foreach ($lines as $index => $line) {
                 $variant = $line['variant'] ?? null;
+                $vendor = $line['vendor'] ?? $line['product']->vendor ?? $platformVendor;
+                $split = $commissionLines[$index] ?? [
+                    'commission_rate' => 0,
+                    'commission_amount' => 0,
+                    'vendor_net' => (float) $line['line_total'],
+                ];
 
                 ShopOrderItem::query()->create([
                     'shop_order_id' => $order->id,
+                    'vendor_id' => $vendor?->id,
+                    'vendor_name' => $vendor?->name,
                     'accessory_id' => $line['product']->id,
                     'accessory_variant_id' => $variant?->id,
                     'name' => $line['name'],
@@ -167,6 +177,10 @@ class ShopCheckoutController extends Controller
                     'type' => $line['product']->type,
                     'price' => $line['price'],
                     'quantity' => $line['quantity'],
+                    'commission_rate' => $split['commission_rate'],
+                    'commission_amount' => $split['commission_amount'],
+                    'vendor_net' => $split['vendor_net'],
+                    'fulfilment_status' => 'pending',
                 ]);
 
                 if (! $payOnline) {

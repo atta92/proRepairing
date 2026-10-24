@@ -133,7 +133,9 @@
                             @foreach ($items as $item)
                                 <li class="flex items-start justify-between gap-3 text-sm">
                                     <span class="text-ink">
-                                        <span aria-hidden="true">{{ $item->repair->emoji() }}</span>
+                                        <span class="mr-1.5 inline-flex text-accent" aria-hidden="true">
+                                            <i class="bi {{ $item->repair->iconClass() }}"></i>
+                                        </span>
                                         {{ $item->repair->name }}
                                     </span>
                                     <span class="font-semibold text-ink">£{{ number_format((float) $item->price, 0) }}</span>
