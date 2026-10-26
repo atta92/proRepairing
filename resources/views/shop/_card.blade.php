@@ -22,7 +22,7 @@
             <h3 class="mt-1.5 font-display text-sm font-semibold leading-snug text-ink group-hover:text-accent-dark sm:mt-2 sm:text-lg">
                 {{ $product->name }}
             </h3>
-            @if ($product->vendor)
+            @if ($product->vendor && empty($hideVendor))
                 <p class="mt-1 text-[11px] text-steel">
                     Sold by
                     <span class="font-medium text-ink">{{ $product->vendor->name }}</span>

@@ -17,8 +17,10 @@ class RepairOrderPaidCustomerMail extends Mailable
 
     public function envelope(): Envelope
     {
+        $paid = filled($this->order->paid_at);
+
         return new Envelope(
-            subject: 'Repair booking paid — '.$this->order->reference,
+            subject: ($paid ? 'Repair booking paid — ' : 'Repair booking confirmed — ').$this->order->reference,
         );
     }
 

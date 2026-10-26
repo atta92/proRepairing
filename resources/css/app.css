@@ -6,9 +6,10 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    /* Same as Global Times headlines: Epilogue everywhere */
+    --font-sans: 'Epilogue', Arial, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
-    --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Epilogue', Arial, ui-sans-serif, system-ui, sans-serif;
 
     --color-ink: #0f1720;
     --color-ink-soft: #1c2a36;
@@ -34,6 +35,7 @@
 
     html {
         scroll-behavior: smooth;
+        font-family: var(--font-sans);
     }
 
     body {
@@ -44,7 +46,15 @@
     h1,
     h2,
     h3,
-    .font-display {
+    h4,
+    h5,
+    h6,
+    button,
+    input,
+    select,
+    textarea,
+    .font-display,
+    .font-sans {
         font-family: var(--font-display);
     }
 }
@@ -191,6 +201,17 @@
         background-size: 40px 40px;
     }
 
+    /* Landing post-hero shell: one continuous grid field */
+    .home-body-shell {
+        position: relative;
+        isolation: isolate;
+    }
+
+    .home-body-shell > section {
+        position: relative;
+        z-index: 1;
+    }
+
     /* Phone + laptop emoji wash */
     .site-emoji-bg::before {
         content: '';
@@ -335,6 +356,47 @@
 
     .btn-ghost {
         @apply inline-flex items-center justify-center gap-2 rounded-lg border border-steel/20 bg-white px-5 py-2.5 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent;
+    }
+
+    .receipt {
+        border-left: 1px solid var(--color-mist);
+        border-right: 1px solid var(--color-mist);
+    }
+
+    .receipt-rule {
+        border-top: 1px dashed #cbd5e1;
+    }
+
+    .receipt-edge {
+        height: 12px;
+        background: radial-gradient(circle, transparent 5px, #fff 5.5px) -7px -6px / 14px 12px repeat-x;
+    }
+
+    .receipt-edge-top {
+        transform: rotate(180deg);
+        margin-top: -1px;
+    }
+
+    .receipt-edge-bottom {
+        margin-bottom: -1px;
+    }
+
+    @media print {
+        header,
+        footer,
+        .print\:hidden,
+        [role='banner'] {
+            display: none !important;
+        }
+
+        body {
+            background: #fff !important;
+        }
+
+        .receipt {
+            box-shadow: none !important;
+            max-width: 100%;
+        }
     }
 
     .site-nav-link {

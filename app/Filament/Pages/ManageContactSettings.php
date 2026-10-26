@@ -53,6 +53,7 @@ class ManageContactSettings extends Page
             'contact_phone' => $settings->contact_phone,
             'contact_hours' => $settings->contact_hours,
             'contact_address' => $settings->contact_address,
+            'mail_in_address' => $settings->mail_in_address,
             'contact_intro' => $settings->contact_intro,
             'social_facebook' => $settings->social_facebook,
             'social_instagram' => $settings->social_instagram,
@@ -88,12 +89,13 @@ class ManageContactSettings extends Page
                             ->columnSpanFull(),
                     ]),
                 Section::make('Contact information')
-                    ->description('Shown in the website footer, contact page and home contact section.')
+                    ->description('Shown in the website footer, contact page and home contact section. The email below also receives admin copies of new paid orders.')
                     ->schema([
                         TextInput::make('contact_email')
-                            ->label('Email')
+                            ->label('Contact / notification email')
                             ->email()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->helperText('Public contact email on the site, and where admin order confirmation emails are sent (in addition to admin user accounts). Do not leave as info@example.com.'),
                         TextInput::make('contact_phone')
                             ->label('Phone')
                             ->tel()
@@ -103,12 +105,23 @@ class ManageContactSettings extends Page
                             ->maxLength(255)
                             ->placeholder('Mon–Sun · Free UK mail-in'),
                         TextInput::make('contact_address')
-                            ->label('Address')
-                            ->maxLength(255),
+                            ->label('Public address')
+                            ->maxLength(255)
+                            ->helperText('Short address shown on the contact page/footer (not used for mail-in parcels).'),
                         Textarea::make('contact_intro')
                             ->label('Intro text')
                             ->rows(3)
                             ->helperText('Short paragraph shown on the Contact us page and home contact section.')
+                            ->columnSpanFull(),
+                    ]),
+                Section::make('Mail-in repairs')
+                    ->description('Postal address only — this is printed in the customer confirmation email so they know where to post their device. It is not an email inbox.')
+                    ->schema([
+                        Textarea::make('mail_in_address')
+                            ->label('Mail-in postal address')
+                            ->rows(4)
+                            ->helperText('Full postal address for parcels (business name, street, city, postcode). Do not put an email address here.')
+                            ->placeholder("Repairing\nUnit 1 Example Estate\nLondon\nSW1A 1AA")
                             ->columnSpanFull(),
                     ]),
                 Section::make('Social accounts')
@@ -191,6 +204,7 @@ class ManageContactSettings extends Page
             'contact_phone' => $data['contact_phone'] ?? null,
             'contact_hours' => $data['contact_hours'] ?? null,
             'contact_address' => $data['contact_address'] ?? null,
+            'mail_in_address' => $data['mail_in_address'] ?? null,
             'contact_intro' => $data['contact_intro'] ?? null,
             'social_facebook' => $data['social_facebook'] ?? null,
             'social_instagram' => $data['social_instagram'] ?? null,

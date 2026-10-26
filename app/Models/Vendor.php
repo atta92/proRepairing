@@ -136,6 +136,27 @@ class Vendor extends Model
         return '/storage/'.ltrim(str_replace('\\', '/', (string) $this->logo_path), '/');
     }
 
+    public function bannerUrl(): ?string
+    {
+        if (! filled($this->banner_path)) {
+            return null;
+        }
+
+        return '/storage/'.ltrim(str_replace('\\', '/', (string) $this->banner_path), '/');
+    }
+
+    public function initials(): string
+    {
+        $parts = preg_split('/\s+/', trim((string) $this->name)) ?: [];
+        $letters = collect($parts)
+            ->filter()
+            ->take(2)
+            ->map(fn (string $part) => mb_strtoupper(mb_substr($part, 0, 1)))
+            ->implode('');
+
+        return $letters !== '' ? $letters : 'S';
+    }
+
     public function effectiveCommissionRate(): float
     {
         if ($this->is_platform) {

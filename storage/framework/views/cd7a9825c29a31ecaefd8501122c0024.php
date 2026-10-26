@@ -24,7 +24,7 @@
                 <?php echo e($product->name); ?>
 
             </h3>
-            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($product->vendor): ?>
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($product->vendor && empty($hideVendor)): ?>
                 <p class="mt-1 text-[11px] text-steel">
                     Sold by
                     <span class="font-medium text-ink"><?php echo e($product->vendor->name); ?></span>

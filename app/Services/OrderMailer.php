@@ -76,16 +76,29 @@ class OrderMailer
         $emails = User::query()
             ->where('is_admin', true)
             ->pluck('email')
-            ->filter()
+            ->filter(fn ($email) => $this->isDeliverableEmail((string) $email))
             ->values()
             ->all();
 
-        $contact = SiteSetting::current()->contact_email;
-        if (filled($contact) && ! in_array($contact, $emails, true)) {
+        $contact = (string) (SiteSetting::current()->contact_email ?? '');
+        if ($this->isDeliverableEmail($contact) && ! in_array($contact, $emails, true)) {
             $emails[] = $contact;
         }
 
         return $emails;
+    }
+
+    private function isDeliverableEmail(string $email): bool
+    {
+        $email = strtolower(trim($email));
+        if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        $domain = substr(strrchr($email, '@') ?: '', 1);
+        $blocked = ['example.com', 'example.org', 'example.net', 'test', 'localhost', 'invalid'];
+
+        return $domain !== '' && ! in_array($domain, $blocked, true);
     }
 
     private function safeSend(string $email, object $mailable): void

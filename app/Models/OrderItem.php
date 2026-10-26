@@ -10,6 +10,7 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'device_repair_id',
+        'repair_addon_id',
         'name',
         'price',
         'quantity',
@@ -31,5 +32,10 @@ class OrderItem extends Model
     public function deviceRepair(): BelongsTo
     {
         return $this->belongsTo(DeviceRepair::class);
+    }
+
+    public function repairAddon(): BelongsTo
+    {
+        return $this->belongsTo(RepairAddon::class);
     }
 }

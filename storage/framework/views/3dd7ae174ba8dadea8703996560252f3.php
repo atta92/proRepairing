@@ -5,8 +5,6 @@
 <?php $__env->startSection('meta_description', $siteSettings->site_description ?: ('Cracked screen, worn battery or charging fault? ' . $siteSettings->displayName() . ' fixes phones, tablets and laptops in-house with published prices and a 12-month warranty.')); ?>
 
 <?php $__env->startSection('content'); ?>
-    <?php $homeBg = 0; ?>
-
     <div
         x-data="{ ready: false }"
         x-init="setTimeout(() => ready = true, 240)"
@@ -17,7 +15,7 @@
 
         <div x-show="ready" x-cloak>
     
-    <section class="<?php echo e($homeBg++ % 2 === 0 ? 'site-emoji-bg' : 'site-grid-bg'); ?> relative overflow-hidden bg-ink text-white">
+    <section class="site-emoji-bg relative overflow-hidden bg-ink text-white">
         <div class="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
             <div class="absolute -left-24 top-10 h-72 w-72 rounded-full bg-accent/20 blur-3xl"></div>
             <div class="absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-signal/15 blur-3xl"></div>
@@ -115,9 +113,11 @@
         </div>
     </section>
 
+    
+    <div class="home-body-shell">
 
     
-    <section id="devices" class="<?php echo e($homeBg++ % 2 === 0 ? 'site-emoji-bg' : 'site-grid-bg-soft'); ?> scroll-mt-24 bg-white py-16 sm:py-20">
+    <section id="devices" class="site-grid-bg-soft scroll-mt-24 bg-white py-16 sm:py-20">
         <div class="site-container">
             <div class="max-w-2xl">
                 <h2 class="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
@@ -175,7 +175,7 @@
     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($shopVendors->isNotEmpty()): ?>
         <section
             id="shop"
-            class="<?php echo e($homeBg++ % 2 === 0 ? 'site-emoji-bg' : 'site-grid-bg-soft'); ?> scroll-mt-24 bg-snow py-16 sm:py-20"
+            class="site-grid-bg-soft scroll-mt-24 bg-snow py-16 sm:py-20"
             x-data="{
                 shopVendorId: <?php echo e((int) $defaultShopVendorId); ?>,
                 sellerCanPrev: false,
@@ -337,7 +337,7 @@
     <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
     
-    <section id="how-it-works" class="<?php echo e($homeBg++ % 2 === 0 ? 'site-emoji-bg' : 'site-grid-bg-soft'); ?> scroll-mt-24 bg-snow py-16 sm:py-20">
+    <section id="how-it-works" class="site-grid-bg-soft scroll-mt-24 bg-white py-16 sm:py-20">
         <div class="site-container">
             <div class="mx-auto max-w-2xl text-center">
                 <p class="text-sm font-semibold uppercase tracking-wider text-accent">Free mail-in</p>
@@ -371,7 +371,7 @@
 
     
     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($posts->isNotEmpty()): ?>
-        <section id="blog" class="<?php echo e($homeBg++ % 2 === 0 ? 'site-emoji-bg' : 'site-grid-bg-soft'); ?> scroll-mt-24 bg-snow py-16 sm:py-20">
+        <section id="blog" class="site-grid-bg-soft scroll-mt-24 bg-snow py-16 sm:py-20">
             <div class="site-container">
                 <div class="flex flex-wrap items-end justify-between gap-4">
                     <div class="max-w-2xl">
@@ -405,7 +405,7 @@
         ?>
         <section
             id="before-after"
-            class="scroll-mt-24 bg-white py-16 sm:py-20"
+            class="site-grid-bg-soft scroll-mt-24 bg-white py-16 sm:py-20"
             x-data="{ page: 0, pages: <?php echo e($beforeAfterPageCount); ?> }"
         >
             <div class="site-container">
@@ -512,7 +512,7 @@
     <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
     
-    <section id="sell-with-us" class="<?php echo e($homeBg++ % 2 === 0 ? 'site-emoji-bg' : 'site-grid-bg-soft'); ?> scroll-mt-24 bg-snow py-16 sm:py-20">
+    <section id="sell-with-us" class="site-grid-bg-soft scroll-mt-24 bg-snow py-16 sm:py-20">
         <div class="site-container">
             <div class="overflow-hidden rounded-2xl border border-mist bg-white shadow-sm">
                 <div class="grid lg:grid-cols-[1.4fr_1fr]">
@@ -585,51 +585,6 @@
         </div>
     </section>
 
-    
-    <section id="contact" class="<?php echo e($homeBg++ % 2 === 0 ? 'site-emoji-bg' : 'site-grid-bg'); ?> scroll-mt-24 bg-ink py-16 text-white sm:py-20">
-        <div class="site-container">
-            <div class="overflow-hidden rounded-2xl border border-white/15 bg-white/5">
-                <div class="grid lg:grid-cols-2">
-                    <div class="border-b border-white/10 p-6 sm:p-8 lg:border-b-0 lg:border-r lg:border-white/10 lg:p-10">
-                        <h2 class="font-display text-3xl font-bold tracking-tight sm:text-4xl">
-                            Tell us what’s broken
-                        </h2>
-                        <p class="mt-3 max-w-lg text-base text-white/70">
-                            <?php echo e($siteSettings->contact_intro ?: 'Older device, rare model, or a fault you can’t describe? Request a free quote and we’ll come back with a fixed price.'); ?>
-
-                        </p>
-                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(($siteSettings->contact_email ?? null) || ($siteSettings->contact_phone ?? null)): ?>
-                            <div class="mt-6 flex flex-col gap-2.5 text-sm text-white/70">
-                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($siteSettings->contact_email): ?>
-                                    <a href="mailto:<?php echo e($siteSettings->contact_email); ?>" class="inline-flex items-center gap-2 transition hover:text-white">
-                                        <i class="bi bi-envelope text-accent-light" aria-hidden="true"></i>
-                                        <?php echo e($siteSettings->contact_email); ?>
-
-                                    </a>
-                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($siteSettings->contact_phone): ?>
-                                    <a href="tel:<?php echo e(preg_replace('/\s+/', '', $siteSettings->contact_phone)); ?>" class="inline-flex items-center gap-2 transition hover:text-white">
-                                        <i class="bi bi-telephone text-accent-light" aria-hidden="true"></i>
-                                        <?php echo e($siteSettings->contact_phone); ?>
-
-                                    </a>
-                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                            </div>
-                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
-                    </div>
-
-                    <div class="flex items-center justify-end p-6 sm:p-8 lg:p-10">
-                        <div class="ml-auto flex flex-wrap items-center justify-end gap-3">
-                            <a href="#price-checker" class="btn-primary">Check a price</a>
-                            <a href="<?php echo e(route('pages.contact')); ?>" class="btn-secondary">Contact us</a>
-                            <button type="button" class="btn-secondary" data-quote-open>Request a Quote</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-        </div>
     </div>
 <?php $__env->stopSection(); ?>
 

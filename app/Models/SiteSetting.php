@@ -18,6 +18,7 @@ class SiteSetting extends Model
         'contact_phone',
         'contact_hours',
         'contact_address',
+        'mail_in_address',
         'contact_intro',
         'social_facebook',
         'social_instagram',
@@ -39,8 +40,6 @@ class SiteSetting extends Model
             $defaults = [
                 'site_name' => config('app.name', 'Repairing'),
                 'site_description' => 'Top-rated same-day repair services for phones, tablets and laptops - free mail-in from anywhere in the UK.',
-                'contact_email' => 'info@example.com',
-                'contact_phone' => '01234 567890',
                 'contact_hours' => 'Mon-Sun · Free UK mail-in',
                 'contact_intro' => 'Get in touch for repairs, quotes, or shop orders. Free mail-in from anywhere in the UK.',
                 'about_title' => 'About us',
@@ -59,6 +58,12 @@ class SiteSetting extends Model
                     $settings->{$key} = $value;
                     $dirty = true;
                 }
+            }
+
+            // Drop leftover seed placeholder so admin order emails are not sent there.
+            if ($settings->contact_email === 'info@example.com') {
+                $settings->contact_email = null;
+                $dirty = true;
             }
 
             if ($dirty) {

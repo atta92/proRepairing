@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\RepairAddon;
 use App\Services\BookingCart;
 use App\Services\OrderMailer;
 use App\Services\StripeCheckoutService;
 use App\Support\CheckoutCustomer;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,15 +26,64 @@ class CheckoutController extends Controller
             return redirect()->route('home')->with('error', 'Your booking basket is empty. Choose a repair to continue.');
         }
 
+        if ($request->has('addon_ids')) {
+            $cart->setAddonIds((array) $request->input('addon_ids', []));
+        }
+
+        $addons = RepairAddon::query()->active()->ordered()->get();
+        $selectedAddons = $cart->addons();
         $totals = $cart->totals();
         $user = $request->user();
         $customer = $user?->customer;
         $stripeConfigured = $stripe->isConfigured();
 
-        return view('checkout.show', compact('device', 'items', 'totals', 'user', 'customer', 'stripeConfigured'));
+        return view('checkout.show', compact(
+            'device',
+            'items',
+            'addons',
+            'selectedAddons',
+            'totals',
+            'user',
+            'customer',
+            'stripeConfigured'
+        ));
     }
 
-    public function store(Request $request, BookingCart $cart, StripeCheckoutService $stripe): RedirectResponse
+    public function updateAddons(Request $request, BookingCart $cart): JsonResponse|RedirectResponse
+    {
+        if (! $cart->device() || $cart->items()->isEmpty()) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Basket empty'], 422);
+            }
+
+            return redirect()->route('home')->with('error', 'Your booking basket is empty.');
+        }
+
+        $validated = $request->validate([
+            'addon_ids' => ['nullable', 'array'],
+            'addon_ids.*' => ['integer', 'exists:repair_addons,id,is_active,1'],
+        ]);
+
+        $cart->setAddonIds($validated['addon_ids'] ?? []);
+
+        $selectedAddons = $cart->addons()->map(fn (RepairAddon $addon) => [
+            'id' => $addon->id,
+            'name' => $addon->name,
+            'price' => (float) $addon->price,
+        ])->values();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'addon_ids' => $cart->addonIds(),
+                'addons' => $selectedAddons,
+                'totals' => $cart->totals(),
+            ]);
+        }
+
+        return redirect()->route('checkout.show');
+    }
+
+    public function store(Request $request, BookingCart $cart, StripeCheckoutService $stripe, OrderMailer $mailer): RedirectResponse
     {
         $device = $cart->device();
         $items = $cart->items();
@@ -54,7 +105,12 @@ class CheckoutController extends Controller
             'scheduled_time' => ['nullable', 'string', 'max:20'],
             'payment_method' => ['required', 'in:card,store'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'addon_ids' => ['nullable', 'array'],
+            'addon_ids.*' => ['integer', 'exists:repair_addons,id,is_active,1'],
         ]);
+
+        $cart->setAddonIds($validated['addon_ids'] ?? []);
+        $selectedAddons = $cart->addons();
 
         if ($validated['payment_method'] === 'card' && ! $stripe->isConfigured()) {
             return back()
@@ -65,7 +121,7 @@ class CheckoutController extends Controller
         $totals = $cart->totals();
         $payOnline = $validated['payment_method'] === 'card';
 
-        $order = DB::transaction(function () use ($request, $validated, $device, $items, $totals, $payOnline) {
+        $order = DB::transaction(function () use ($request, $validated, $device, $items, $selectedAddons, $totals, $payOnline) {
             $customer = CheckoutCustomer::resolve($request->user(), [
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -102,6 +158,17 @@ class CheckoutController extends Controller
                 ]);
             }
 
+            foreach ($selectedAddons as $addon) {
+                OrderItem::query()->create([
+                    'order_id' => $order->id,
+                    'device_repair_id' => null,
+                    'repair_addon_id' => $addon->id,
+                    'name' => $addon->name,
+                    'price' => $addon->price,
+                    'quantity' => 1,
+                ]);
+            }
+
             return $order;
         });
 
@@ -122,6 +189,7 @@ class CheckoutController extends Controller
 
         $cart->clear();
         $request->session()->put('repair_order_access', $order->id);
+        $mailer->repairOrderPaid($order->fresh(['customer', 'items', 'device']));
 
         return redirect()
             ->route('checkout.success', $order)
