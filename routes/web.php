@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\PriceCheckerController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\BuildAssetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ContactController;
@@ -25,6 +26,11 @@ use App\Http\Controllers\VendorShopController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+
+// Serve Vite assets from Laravel public/build when the web root is separate.
+Route::get('/build/{path}', BuildAssetController::class)
+    ->where('path', '.*')
+    ->name('build.asset');
 
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::get('/robots.txt', RobotsController::class)->name('robots');
