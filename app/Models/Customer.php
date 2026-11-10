@@ -19,6 +19,14 @@ class Customer extends Model
         'postcode',
     ];
 
+    protected static function booted(): void
+    {
+        static::deleting(function (Customer $customer): void {
+            // Repair orders FK has no cascade; remove them (items cascade from orders).
+            $customer->orders()->delete();
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

@@ -13,9 +13,12 @@
 /.zed
 /auth.json
 /node_modules
-/public/build
+# Track compiled Vite assets so shared hosting can deploy without Node.
+# /public/build
 /public/hot
 /public/storage
+/public/build (2).zip
+/public/*.zip
 /storage/*.key
 /storage/pail
 /vendor

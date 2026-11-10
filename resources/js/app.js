@@ -1140,6 +1140,7 @@ window.shopCheckout = function shopCheckout(config = {}) {
 Alpine.start();
 
 document.addEventListener('DOMContentLoaded', () => {
+    initSiteHeaderScroll();
     initMobileNav();
     initDesktopDropdowns();
     initMobileAccordions();
@@ -1147,6 +1148,21 @@ document.addEventListener('DOMContentLoaded', () => {
     initQuoteModal();
     initButtonLoading();
 });
+
+function initSiteHeaderScroll() {
+    const header = document.getElementById('site-header');
+    if (!header) {
+        return;
+    }
+
+    const threshold = 24;
+    const sync = () => {
+        header.classList.toggle('is-scrolled', window.scrollY > threshold);
+    };
+
+    sync();
+    window.addEventListener('scroll', sync, { passive: true });
+}
 
 /**
  * Universal processing spinner for submit / navigation buttons.

@@ -57,7 +57,7 @@
                                 <img
                                     src="{{ $device->imageUrl() }}"
                                     alt=""
-                                    class="absolute inset-0 h-full w-full object-contain object-center p-3 sm:p-4"
+                                    class="absolute inset-0 h-full w-full object-cover object-center"
                                     loading="lazy"
                                 >
                             @else

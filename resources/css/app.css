@@ -399,12 +399,125 @@
         }
     }
 
+    .site-promo-track {
+        gap: 4rem;
+    }
+
+    @media (min-width: 640px) {
+        .site-promo-track {
+            gap: 5.5rem;
+        }
+    }
+
+    .site-promo-text {
+        width: 14rem;
+        margin: 0;
+        transition: opacity 0.25s ease, transform 0.25s ease;
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .site-promo-text.is-fading {
+        opacity: 0;
+        transform: translateY(0.35rem);
+    }
+
+    .site-header {
+        @apply bg-ink text-white shadow-lg shadow-ink/20;
+    }
+
+    .site-header .site-header-actions {
+        @apply bg-ink;
+    }
+
+    .site-header .site-brand-text {
+        @apply text-white;
+    }
+
+    .site-header .site-header-icon,
+    .site-header .site-header-chip {
+        @apply border-white/20 text-white hover:bg-white/10;
+    }
+
+    .site-header .site-header-chip {
+        @apply text-white/90;
+    }
+
+    .site-header .site-nav-dropdown {
+        @apply border-white/10 bg-ink-soft shadow-2xl;
+    }
+
+    .site-header .site-nav-dropdown-link {
+        @apply text-white/80 hover:bg-white/10 hover:text-white;
+    }
+
+    .site-header .site-mobile-nav {
+        @apply border-white/10 bg-ink-soft;
+    }
+
+    .site-header .site-mobile-nav-link {
+        @apply text-white/85 hover:bg-white/10;
+    }
+
+    .site-header .site-mobile-nav-sublink {
+        @apply text-white/70 hover:bg-white/10 hover:text-white;
+    }
+
     .site-nav-link {
         @apply text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white;
     }
 
     .site-nav-link-active {
         @apply text-accent-light;
+    }
+
+    .site-header.is-scrolled {
+        @apply bg-white text-ink shadow-md shadow-ink/10;
+    }
+
+    .site-header.is-scrolled .site-header-actions {
+        @apply bg-white;
+    }
+
+    .site-header.is-scrolled .site-brand-text {
+        @apply text-ink;
+    }
+
+    .site-header.is-scrolled .site-nav-link {
+        @apply text-ink/80 hover:bg-ink/5 hover:text-ink;
+    }
+
+    .site-header.is-scrolled .site-nav-link-active {
+        @apply text-accent-dark;
+    }
+
+    .site-header.is-scrolled .site-header-icon,
+    .site-header.is-scrolled .site-header-chip {
+        @apply border-ink/15 text-ink hover:bg-ink/5;
+    }
+
+    .site-header.is-scrolled .site-header-chip {
+        @apply text-ink/90;
+    }
+
+    .site-header.is-scrolled .site-nav-dropdown {
+        @apply border-mist bg-white shadow-xl;
+    }
+
+    .site-header.is-scrolled .site-nav-dropdown-link {
+        @apply text-ink/80 hover:bg-ink/5 hover:text-ink;
+    }
+
+    .site-header.is-scrolled .site-mobile-nav {
+        @apply border-mist bg-white;
+    }
+
+    .site-header.is-scrolled .site-mobile-nav-link {
+        @apply text-ink/85 hover:bg-ink/5;
+    }
+
+    .site-header.is-scrolled .site-mobile-nav-sublink {
+        @apply text-ink/70 hover:bg-ink/5 hover:text-ink;
     }
 
     [data-nav-chevron].rotate-180,

@@ -13,7 +13,8 @@ class EditCustomer extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()
+                ->modalDescription('This will also permanently delete their repair bookings and shop orders.'),
         ];
     }
 }
